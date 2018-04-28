@@ -20,11 +20,8 @@ gradle-app.setting
 .idea/compiler.xml
 .idea/misc.xml
 .idea/vcs.xml
-cmake-build-debug/
-cmake-build-release/
-.idea/**/mongoSettings.xml
-*.iws
-out/
+**/out
+**/build
 .idea_modules/
 atlassian-ide-plugin.xml
 .idea/replstate.xml

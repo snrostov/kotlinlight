@@ -37,10 +37,6 @@ class KlLanguage : TruffleLanguage<KlContext>() {
     override fun parse(request: ParsingRequest): CallTarget {
         val source = request.source
 
-        /*
-         * Parse the provided source. At this point, we do not have a SLContext yet. Registration of
-         * the functions with the SLContext happens lazily in SLEvalRootNode.
-         */
         val functions = when {
             request.argumentNames.isEmpty() -> parse(source)
             else -> {

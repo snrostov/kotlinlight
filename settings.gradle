@@ -1,4 +1,5 @@
 rootProject.name = 'kotlinlight'
 
-include "truffle-kotlin-light"
+include "kotlin-light-parser"
+include "kotlin-light-truffle"
 include "launcher"
