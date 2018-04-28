@@ -16,6 +16,10 @@ gradle-app.setting
 .idea/**/uiDesigner.xml
 .idea/**/gradle.xml
 .idea/**/libraries
+.idea/**/modules
+.idea/compiler.xml
+.idea/misc.xml
+.idea/vcs.xml
 cmake-build-debug/
 cmake-build-release/
 .idea/**/mongoSettings.xml
