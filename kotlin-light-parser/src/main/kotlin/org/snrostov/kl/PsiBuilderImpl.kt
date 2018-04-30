@@ -23,6 +23,7 @@ import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.TokenSet
 import com.intellij.util.containers.Stack
 import org.jetbrains.kotlin.lexer.KotlinLexer
+import org.jetbrains.kotlin.lexer.KtToken
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.lexer.KtTokens.*
 import org.jetbrains.kotlin.parsing.trash.SemanticWhitespaceAwarePsiBuilder
@@ -52,12 +53,15 @@ class PsiBuilderImpl(
   init {
     newlinesEnabled.push(true)
     joinComplexTokens.push(true)
-    doAdvanceLexer()
+
+    pos++
+    while (myWhitespacesOrComments.contains(lexType[pos])) pos++
   }
 
   val root = mark()
 
-  private fun doGetTokenType() = lexType[pos]
+  private fun doGetTokenType() =
+    if (pos >= size) null else lexType[pos]
 
   private fun doLookAhead(steps: Int): IElementType? {
     var i = 0
@@ -69,12 +73,34 @@ class PsiBuilderImpl(
     return lexType[pos]
   }
 
-  private fun doGetTokenText(): String? =
-    text.subSequence(lexPos[pos], lexPos[pos + 1]).toString()
+  private fun doGetTokenText(): String? {
+    val startIndex = lexPos[pos]
+    val endIndex = lexPos[pos + 1]
+    if (endIndex < startIndex) return null
+    return text.subSequence(startIndex, endIndex).toString()
+  }
+
+  private fun lexNode() {
+    val type = lexType[pos]
+    if (type != null) {
+      val id = Node(pos, leaf, true).also {
+        leaf = it
+      }
+
+      pos++
+
+      id.done(type)
+    } else {
+      pos++
+    }
+  }
 
   private fun doAdvanceLexer() {
-    pos++
-    while (myWhitespacesOrComments.contains(lexType[pos])) pos++
+    lexNode()
+
+    while (!eof() && myWhitespacesOrComments.contains(lexType[pos])) {
+      lexNode()
+    }
   }
 
   override fun getOriginalText(): CharSequence? = text
@@ -83,9 +109,15 @@ class PsiBuilderImpl(
     lexType[pos] = type
   }
 
-  override fun rawLookup(steps: Int): IElementType? = lexType[pos + steps]
+  fun guardPos(pos: Int) = when {
+    pos < 0 -> 0
+    pos > size - 1 -> size - 1
+    else -> pos
+  }
 
-  override fun rawTokenTypeStart(steps: Int): Int = lexPos[pos + steps]
+  override fun rawLookup(steps: Int): IElementType? = lexType[guardPos(pos + steps)]
+
+  override fun rawTokenTypeStart(steps: Int): Int = lexPos[guardPos(pos + steps)]
 
   override fun rawTokenIndex(): Int = pos
 
@@ -99,7 +131,7 @@ class PsiBuilderImpl(
     }
   }
 
-  inner class Node(val start: Int, var parent: Node?) : PsiBuilder.Marker {
+  inner class Node(val start: Int, var parent: Node?, val lex: Boolean = false) : PsiBuilder.Marker {
     var open = true
     var end = -1
 
@@ -112,6 +144,7 @@ class PsiBuilderImpl(
     }
 
     override fun precede(): Node {
+      check(parent!!.children.remove(this))
       return Node(start, parent).also {
         parent = it
         it.children.add(this)
@@ -119,18 +152,18 @@ class PsiBuilderImpl(
     }
 
     override fun drop() {
-      check(open)
+      if (open) {
+        val parent = this.parent!!
+        check(parent.children.remove(this))
 
-      val parent = this.parent!!
-      check(parent.children.remove(this))
+        parent.children.addAll(children)
+        children.forEach {
+          it.parent = parent
+        }
 
-      parent.children.addAll(children)
-      children.forEach {
-        it.parent = parent
+        leaf = parent
+        open = false
       }
-
-      leaf = parent
-      open = false
     }
 
     override fun rollbackTo() {
@@ -201,10 +234,12 @@ class PsiBuilderImpl(
       else this@PsiBuilderImpl.text.substring(lexPos[start], this@PsiBuilderImpl.text.length)
 
     fun printTo(out: IndentedAppendable) {
-      if (children.isEmpty()) {
-        out.appendln("$type: $text")
+      val typeTitle = type?.debugName?.toLowerCase()
+      if (lex) {
+        val text = text.replace("\n", "\\n")
+        out.appendln("\"$text\" $typeTitle")
       } else {
-        out.appendln("$type")
+        out.appendln(typeTitle ?: "<null>")
         out.nested { nested ->
           children.forEach {
             it.printTo(nested)
@@ -212,15 +247,14 @@ class PsiBuilderImpl(
         }
       }
     }
+
   }
 
   override fun error(messageText: String) {
 
   }
 
-  override fun eof(): Boolean {
-    return pos >= size
-  }
+  override fun eof() = pos >= size
 
   override fun isWhitespaceOrComment(token: IElementType): Boolean {
     return myWhitespaces.contains(token) || myComments.contains(token)

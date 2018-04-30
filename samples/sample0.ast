@@ -1,0 +1,44 @@
+kt_file
+  package_directive
+  import_list
+  fun
+    "fun" fun
+    " " white_space
+    "main" identifier
+    value_parameter_list
+      "(" lpar
+      value_parameter
+        "args" identifier
+        ":" colon
+        " " white_space
+        type_reference
+          user_type
+            reference_expression
+              "Array" identifier
+            type_argument_list
+              "<" lt
+              type_projection
+                type_reference
+                  user_type
+                    reference_expression
+                      "String" identifier
+              ">" gt
+      ")" rpar
+      " " white_space
+    block
+      "{" lbrace
+      "\n  " white_space
+      call_expression
+        reference_expression
+          "println" identifier
+        value_argument_list
+          "(" lpar
+          value_argument
+            string_template
+              """ open_quote
+              literal_string_template_entry
+                "hello, world!" regular_string_part
+              """ closing_quote
+          ")" rpar
+          "\n" white_space
+      "}" rbrace

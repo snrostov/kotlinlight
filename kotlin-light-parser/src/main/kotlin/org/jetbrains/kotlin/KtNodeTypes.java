@@ -22,7 +22,7 @@ public interface KtNodeTypes {
     IElementType KT_FILE = new IElementType("KT_FILE");
 
     IElementType CLASS = new IElementType("CLASS");
-    IElementType FUN = new IElementType("FUNCTION");
+    IElementType FUN = new IElementType("FUN");
     IElementType PROPERTY = new IElementType("PROPERTY");
     IElementType DESTRUCTURING_DECLARATION = new KtNodeType("DESTRUCTURING_DECLARATION");
     IElementType DESTRUCTURING_DECLARATION_ENTRY = new KtNodeType("DESTRUCTURING_DECLARATION_ENTRY");

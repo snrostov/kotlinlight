@@ -1,0 +1,133 @@
+kt_file
+  package_directive
+  import_list
+  class
+    "interface" interface
+    " " white_space
+    "X" identifier
+    type_parameter_list
+      "<" lt
+      type_parameter
+        "T" identifier
+      ">" gt
+      "\n\n" white_space
+  class
+    "class" class
+    " " white_space
+    "Test" identifier
+    type_parameter_list
+      "<" lt
+      type_parameter
+        "T" identifier
+        ":" colon
+        " " white_space
+        type_reference
+          user_type
+            reference_expression
+              "Int" identifier
+      ">" gt
+      " " white_space
+    ":" colon
+    " " white_space
+    super_type_list
+      super_type_entry
+        type_reference
+          user_type
+            reference_expression
+              "X" identifier
+            type_argument_list
+              "<" lt
+              type_projection
+                type_reference
+                  user_type
+                    reference_expression
+                      "T" identifier
+              ">" gt
+              " " white_space
+    class_body
+      "{" lbrace
+      "\n  " white_space
+      function
+        "fun" fun
+        " " white_space
+        "test" identifier
+        value_parameter_list
+          "(" lpar
+          value_parameter
+            "x" identifier
+            ":" colon
+            " " white_space
+            type_reference
+              user_type
+                reference_expression
+                  "String" identifier
+          ")" rpar
+        ":" colon
+        " " white_space
+        type_reference
+          user_type
+            reference_expression
+              "Int" identifier
+              " " white_space
+        block
+          "{" lbrace
+          "\n    " white_space
+          property
+            "val" val
+            " " white_space
+            "y" identifier
+            " " white_space
+            "=" eq
+            " " white_space
+            integer_constant
+              "4" integer_literal
+              "\n    " white_space
+          call_expression
+            reference_expression
+              "println" identifier
+            value_argument_list
+              "(" lpar
+              value_argument
+                string_template
+                  """ open_quote
+                  literal_string_template_entry
+                    "test: " regular_string_part
+                  long_string_template_entry
+                    "${" long_template_entry_start
+                    binary_expression
+                      integer_constant
+                        "2" integer_literal
+                        " " white_space
+                      operation_reference
+                        "+" plus
+                        " " white_space
+                      integer_constant
+                        "2" integer_literal
+                    binary_expression
+                      integer_constant
+                        "2" integer_literal
+                        " " white_space
+                      operation_reference
+                        "+" plus
+                        " " white_space
+                      integer_constant
+                        "2" integer_literal
+                    "}" long_template_entry_end
+                  literal_string_template_entry
+                    " = " regular_string_part
+                  short_string_template_entry
+                    "$" short_template_entry_start
+                    reference_expression
+                      "y" identifier
+                  """ closing_quote
+              ")" rpar
+              "\n    " white_space
+          return
+            "return" return
+            " " white_space
+            integer_constant
+              "1" integer_literal
+              "\n  " white_space
+          "}" rbrace
+          "\n" white_space
+      "}" rbrace
