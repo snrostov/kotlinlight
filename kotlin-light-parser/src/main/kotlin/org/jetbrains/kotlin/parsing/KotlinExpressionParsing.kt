@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright 2010-2017 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,18 +21,16 @@ import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.TokenSet
 import org.jetbrains.kotlin.KtNodeType
 import org.jetbrains.kotlin.KtNodeTypes
+import org.jetbrains.kotlin.KtNodeTypes.*
 import org.jetbrains.kotlin.lexer.KtToken
 import org.jetbrains.kotlin.lexer.KtTokens
-import org.jetbrains.kotlin.parsing.KotlinParsing.NameParsingMode
-import org.jetbrains.kotlin.parsing.trash.SemanticWhitespaceAwarePsiBuilder
-
-import java.util.*
-
-import org.jetbrains.kotlin.KtNodeTypes.*
 import org.jetbrains.kotlin.lexer.KtTokens.*
 import org.jetbrains.kotlin.parsing.KotlinParsing.AnnotationParsingMode.DEFAULT
+import org.jetbrains.kotlin.parsing.KotlinParsing.NameParsingMode
 import org.jetbrains.kotlin.parsing.trash.PRECEDING_ALL_COMMENTS_BINDER
+import org.jetbrains.kotlin.parsing.trash.SemanticWhitespaceAwarePsiBuilder
 import org.jetbrains.kotlin.parsing.trash.TRAILING_ALL_COMMENTS_BINDER
+import java.util.*
 
 open class KotlinExpressionParsing(
   builder: SemanticWhitespaceAwarePsiBuilder,
@@ -89,18 +87,14 @@ open class KotlinExpressionParsing(
     ASSIGNMENT(EQ, PLUSEQ, MINUSEQ, MULTEQ, DIVEQ, PERCEQ);
 
     private var higher: Precedence? = null
-    val operations: TokenSet
-
-    init {
-      this.operations = TokenSet.create(*operations)
-    }
+    val operations: TokenSet = TokenSet.create(*operations)
 
     open fun parseHigherPrecedence(parser: KotlinExpressionParsing) {
       assert(higher != null)
       parser.parseBinaryExpression(higher!!)
     }
 
-    /**
+    /***
      * @param operation the operation sign (e.g. PLUS or IS)
      * @param parser    the parser object
      * @return node type of the result
@@ -122,27 +116,27 @@ open class KotlinExpressionParsing(
     }
   }
 
-  /*
-     * element
-     *   : annotations element
-     *   : "(" element ")" // see tupleLiteral
-     *   : literalConstant
-     *   : functionLiteral
-     *   : tupleLiteral
-     *   : "null"
-     *   : "this" ("<" type ">")?
-     *   : expressionWithPrecedences
-     *   : if
-     *   : try
-     *   : "typeof" "(" element ")"
-     *   : "new" constructorInvocation
-     *   : objectLiteral
-     *   : declaration
-     *   : jump
-     *   : loop
-     *   // block is syntactically equivalent to a functionLiteral with no parameters
-     *   ;
-     */
+  /***
+   * element
+   *   : annotations element
+   *   : "(" element ")" // see tupleLiteral
+   *   : literalConstant
+   *   : functionLiteral
+   *   : tupleLiteral
+   *   : "null"
+   *   : "this" ("<" type ">")?
+   *   : expressionWithPrecedences
+   *   : if
+   *   : try
+   *   : "typeof" "(" element ")"
+   *   : "new" constructorInvocation
+   *   : objectLiteral
+   *   : declaration
+   *   : jump
+   *   : loop
+   *   // block is syntactically equivalent to a functionLiteral with no parameters
+   *   ;
+   */
   fun parseExpression() {
     if (!atSet(EXPRESSION_FIRST)) {
       error("Expecting an expression")
@@ -151,11 +145,11 @@ open class KotlinExpressionParsing(
     parseBinaryExpression(Precedence.ASSIGNMENT)
   }
 
-  /*
-     * element (operation element)*
-     *
-     * see the precedence table
-     */
+  /**
+   * element (operation element)*
+   *
+   * see the precedence table
+   */
   private fun parseBinaryExpression(precedence: Precedence) {
     var expression = mark()
 
@@ -174,9 +168,9 @@ open class KotlinExpressionParsing(
     expression.drop()
   }
 
-  /*
-     * label prefixExpression
-     */
+  /**
+   * label prefixExpression
+   */
   private fun parseLabeledExpression() {
     val expression = mark()
     parseLabelDefinition()
@@ -184,12 +178,15 @@ open class KotlinExpressionParsing(
     expression.done(LABELED_EXPRESSION)
   }
 
-  /*
-     * operation? prefixExpression
-     */
+  /**
+   * operation? prefixExpression
+   */
   private fun parsePrefixExpression() {
     if (at(AT)) {
-      if (!/* rollbackIfDefinitelyNotExpression = */parseLocalDeclaration(false, false)) {
+      if (!
+        /** rollbackIfDefinitelyNotExpression = */
+        parseLocalDeclaration(false, false)
+      ) {
         val expression = mark()
         myKotlinParsing.parseAnnotations(DEFAULT)
         parsePrefixExpression()
@@ -216,11 +213,11 @@ open class KotlinExpressionParsing(
     }
   }
 
-  /*
-     * doubleColonSuffix
-     *   : "::" SimpleName typeArguments?
-     *   ;
-     */
+  /**
+   * doubleColonSuffix
+   *   : "::" SimpleName typeArguments?
+   *   ;
+   */
   private fun parseDoubleColonSuffix(expression: PsiBuilder.Marker): Boolean {
     if (!at(COLONCOLON)) return false
 
@@ -267,19 +264,19 @@ open class KotlinExpressionParsing(
     }
   }
 
-  /*
-     * postfixUnaryExpression
-     *   : atomicExpression postfixUnaryOperation*
-     *   ;
-     *
-     * postfixUnaryOperation
-     *   : "++" : "--" : "!!"
-     *   : typeArguments? valueArguments (getEntryPoint? functionLiteral)
-     *   : typeArguments (getEntryPoint? functionLiteral)
-     *   : arrayAccess
-     *   : memberAccessOperation postfixUnaryExpression // TODO: Review
-     *   ;
-     */
+  /**
+   * postfixUnaryExpression
+   *   : atomicExpression postfixUnaryOperation*
+   *   ;
+   *
+   * postfixUnaryOperation
+   *   : "++" : "--" : "!!"
+   *   : typeArguments? valueArguments (getEntryPoint? functionLiteral)
+   *   : typeArguments (getEntryPoint? functionLiteral)
+   *   : arrayAccess
+   *   : memberAccessOperation postfixUnaryExpression // TODO: Review
+   *   ;
+   */
   private fun parsePostfixExpression() {
     var expression = mark()
 
@@ -324,12 +321,12 @@ open class KotlinExpressionParsing(
     expression.drop()
   }
 
-  /*
-     * callSuffix
-     *   : typeArguments? valueArguments annotatedLambda
-     *   : typeArguments annotatedLambda
-     *   ;
-     */
+  /**
+   * callSuffix
+   *   : typeArguments? valueArguments annotatedLambda
+   *   : typeArguments annotatedLambda
+   *   ;
+   */
   private fun parseCallSuffix(): Boolean {
     if (parseCallWithClosure()) {
       // do nothing
@@ -353,9 +350,9 @@ open class KotlinExpressionParsing(
     return true
   }
 
-  /*
-     * atomicExpression typeParameters? valueParameters? functionLiteral*
-     */
+  /**
+   * atomicExpression typeParameters? valueParameters? functionLiteral*
+   */
   private fun parseSelectorCallExpression() {
     val mark = mark()
     parseAtomicExpression()
@@ -372,16 +369,19 @@ open class KotlinExpressionParsing(
     operationReference.done(OPERATION_REFERENCE)
   }
 
-  /*
-     * annotatedLambda*
-     */
+  /**
+   * annotatedLambda*
+   */
   protected open fun parseCallWithClosure(): Boolean {
     var success = false
 
     while (true) {
       val argument = mark()
 
-      if (!/* preferBlock = */parseAnnotatedLambda(false)) {
+      if (!
+        /** preferBlock = */
+        parseAnnotatedLambda(false)
+      ) {
         argument.drop()
         break
       }
@@ -393,10 +393,10 @@ open class KotlinExpressionParsing(
     return success
   }
 
-  /*
-     * annotatedLambda
-     *  : ("@" annotationEntry)* labelDefinition? functionLiteral
-     */
+  /**
+   * annotatedLambda
+   *  : ("@" annotationEntry)* labelDefinition? functionLiteral
+   */
   private fun parseAnnotatedLambda(preferBlock: Boolean): Boolean {
     val annotated = mark()
 
@@ -413,7 +413,11 @@ open class KotlinExpressionParsing(
       return false
     }
 
-    parseFunctionLiteral(preferBlock, /* collapse = */true)
+    parseFunctionLiteral(
+      preferBlock,
+      /** collapse = */
+      true
+    )
 
     doneOrDrop(labeled, LABELED_EXPRESSION, wasLabel)
     doneOrDrop(annotated, ANNOTATED_EXPRESSION, wereAnnotations)
@@ -421,23 +425,23 @@ open class KotlinExpressionParsing(
     return true
   }
 
-  /*
-     * atomicExpression
-     *   : "this" label?
-     *   : "super" ("<" type ">")? label?
-     *   : objectLiteral
-     *   : jump
-     *   : if
-     *   : when
-     *   : try
-     *   : loop
-     *   : literalConstant
-     *   : functionLiteral
-     *   : declaration
-     *   : SimpleName
-     *   : collectionLiteral
-     *   ;
-     */
+  /**
+   * atomicExpression
+   *   : "this" label?
+   *   : "super" ("<" type ">")? label?
+   *   : objectLiteral
+   *   : jump
+   *   : if
+   *   : when
+   *   : try
+   *   : loop
+   *   : literalConstant
+   *   : functionLiteral
+   *   : declaration
+   *   : SimpleName
+   *   : collectionLiteral
+   *   ;
+   */
   private fun parseAtomicExpression(): Boolean {
     var ok = true
 
@@ -457,7 +461,8 @@ open class KotlinExpressionParsing(
       at(FOR_KEYWORD) -> parseFor()
       at(WHILE_KEYWORD) -> parseWhile()
       at(DO_KEYWORD) -> parseDoWhile()
-      atSet(*LOCAL_DECLARATION_FIRST) && parseLocalDeclaration(/* rollbackIfDefinitelyNotExpression = */
+      atSet(*LOCAL_DECLARATION_FIRST) && parseLocalDeclaration(
+        /** rollbackIfDefinitelyNotExpression = */
         myBuilder.newlineBeforeCurrentToken(),
         false
       )
@@ -477,11 +482,11 @@ open class KotlinExpressionParsing(
     return ok
   }
 
-  /*
-     * stringTemplate
-     *   : OPEN_QUOTE stringTemplateElement* CLOSING_QUOTE
-     *   ;
-     */
+  /**
+   * stringTemplate
+   *   : OPEN_QUOTE stringTemplateElement* CLOSING_QUOTE
+   *   ;
+   */
   private fun parseStringTemplate() {
     assert(_at(OPEN_QUOTE))
 
@@ -504,18 +509,18 @@ open class KotlinExpressionParsing(
     template.done(STRING_TEMPLATE)
   }
 
-  /*
-     * stringTemplateElement
-     *   : RegularStringPart
-     *   : ShortTemplateEntrySTART (SimpleName | "this")
-     *   : EscapeSequence
-     *   : longTemplate
-     *   ;
-     *
-     * longTemplate
-     *   : "${" expression "}"
-     *   ;
-     */
+  /**
+   * stringTemplateElement
+   *   : RegularStringPart
+   *   : ShortTemplateEntrySTART (SimpleName | "this")
+   *   : EscapeSequence
+   *   : longTemplate
+   *   ;
+   *
+   * longTemplate
+   *   : "${" expression "}"
+   *   ;
+   */
   private fun parseStringTemplateElement() {
     when {
       at(REGULAR_STRING_PART) -> {
@@ -580,17 +585,17 @@ open class KotlinExpressionParsing(
     }
   }
 
-  /*
-     * literalConstant
-     *   : "true" | "false"
-     *   : stringTemplate
-     *   : NoEscapeString
-     *   : IntegerLiteral
-     *   : CharacterLiteral
-     *   : FloatLiteral
-     *   : "null"
-     *   ;
-     */
+  /**
+   * literalConstant
+   *   : "true" | "false"
+   *   : stringTemplate
+   *   : NoEscapeString
+   *   : IntegerLiteral
+   *   : CharacterLiteral
+   *   : FloatLiteral
+   *   : "null"
+   *   ;
+   */
   private fun parseLiteralConstant(): Boolean {
     when {
       at(TRUE_KEYWORD) || at(FALSE_KEYWORD) -> parseOneTokenExpression(BOOLEAN_CONSTANT)
@@ -603,13 +608,13 @@ open class KotlinExpressionParsing(
     return true
   }
 
-  /*
-     * when
-     *   : "when" ("(" (modifiers "val" SimpleName "=")? element ")")? "{"
-     *         whenEntry*
-     *     "}"
-     *   ;
-     */
+  /**
+   * when
+   *   : "when" ("(" (modifiers "val" SimpleName "=")? element ")")? "{"
+   *         whenEntry*
+   *     "}"
+   *   ;
+   */
   private fun parseWhen() {
     assert(_at(WHEN_KEYWORD))
 
@@ -650,13 +655,13 @@ open class KotlinExpressionParsing(
     `when`.done(WHEN)
   }
 
-  /*
-     * whenEntry
-     *   // TODO : consider empty after ->
-     *   : whenCondition{","} "->" element SEMI
-     *   : "else" "->" element SEMI
-     *   ;
-     */
+  /**
+   * whenEntry
+   *   // TODO : consider empty after ->
+   *   : whenCondition{","} "->" element SEMI
+   *   : "else" "->" element SEMI
+   *   ;
+   */
   private fun parseWhenEntry() {
     val entry = mark()
 
@@ -688,9 +693,9 @@ open class KotlinExpressionParsing(
     consumeIf(SEMICOLON)
   }
 
-  /*
-     * : whenCondition{","} "->" element SEMI
-     */
+  /**
+   * : whenCondition{","} "->" element SEMI
+   */
   private fun parseWhenEntryNotElse() {
     while (true) {
       while (at(COMMA)) errorAndAdvance("Expecting a when-condition")
@@ -708,13 +713,13 @@ open class KotlinExpressionParsing(
     // SEMI is consumed in parseWhenEntry
   }
 
-  /*
-     * whenCondition
-     *   : expression
-     *   : ("in" | "!in") expression
-     *   : ("is" | "!is") isRHS
-     *   ;
-     */
+  /**
+   * whenCondition
+   *   : expression
+   *   : ("in" | "!in") expression
+   *   : ("is" | "!is") isRHS
+   *   ;
+   */
   private fun parseWhenCondition() {
     val condition = mark()
     myBuilder.disableNewlines()
@@ -751,20 +756,20 @@ open class KotlinExpressionParsing(
     myBuilder.restoreNewlinesState()
   }
 
-  /*
-     * arrayAccess
-     *   : "[" element{","} "]"
-     *   ;
-     */
+  /**
+   * arrayAccess
+   *   : "[" element{","} "]"
+   *   ;
+   */
   private fun parseArrayAccess() {
     parseAsCollectionLiteralExpression(INDICES, false, "Expecting an index element")
   }
 
-  /*
-     * collectionLiteral
-     *   : "[" element{","}? "]"
-     *   ;
-     */
+  /**
+   * collectionLiteral
+   *   : "[" element{","}? "]"
+   *   ;
+   */
   private fun parseCollectionLiteralExpression() {
     parseAsCollectionLiteralExpression(COLLECTION_LITERAL_EXPRESSION, true, "Expecting an element")
   }
@@ -814,18 +819,18 @@ open class KotlinExpressionParsing(
     }
   }
 
-  /*
-     * SimpleName
-     */
+  /**
+   * SimpleName
+   */
   fun parseSimpleNameExpression() {
     val simpleName = mark()
     expect(IDENTIFIER, "Expecting an identifier")
     simpleName.done(REFERENCE_EXPRESSION)
   }
 
-  /*
-     * modifiers declarationRest
-     */
+  /**
+   * modifiers declarationRest
+   */
   private fun parseLocalDeclaration(rollbackIfDefinitelyNotExpression: Boolean, isScriptTopLevel: Boolean): Boolean {
     val decl = mark()
     val detector = KotlinParsing.ModifierDetector()
@@ -847,17 +852,22 @@ open class KotlinExpressionParsing(
     }
   }
 
-  /*
-     * functionLiteral  // one can use "it" as a parameter name
-     *   : "{" expressions "}"
-     *   : "{" (modifiers SimpleName (":" type)?){","} "->" statements "}"
-     *   ;
-     */
+  /**
+   * functionLiteral  // one can use "it" as a parameter name
+   *   : "{" expressions "}"
+   *   : "{" (modifiers SimpleName (":" type)?){","} "->" statements "}"
+   *   ;
+   */
   private fun parseFunctionLiteral() {
-    parseFunctionLiteral(/* preferBlock = */false, /* collapse = */true)
+    parseFunctionLiteral(
+      /** preferBlock = */
+      false,
+      /** collapse = */
+      true
+    )
   }
 
-  /**
+  /***
    * If it has no ->, it's a block, otherwise a function literal
    */
   fun parseFunctionLiteral(preferBlock: Boolean, collapse: Boolean) {
@@ -969,13 +979,13 @@ open class KotlinExpressionParsing(
   }
 
 
-  /*
-     * lambdaParameter{","}
-     *
-     * lambdaParameter
-     *   : variableDeclarationEntry
-     *   : multipleVariableDeclarations (":" type)?
-     */
+  /**
+   * lambdaParameter{","}
+   *
+   * lambdaParameter
+   *   : variableDeclarationEntry
+   *   : multipleVariableDeclarations (":" type)?
+   */
   private fun parseFunctionLiteralParameterList() {
     val parameterList = mark()
 
@@ -1011,10 +1021,10 @@ open class KotlinExpressionParsing(
     parameterList.done(VALUE_PARAMETER_LIST)
   }
 
-  /*
-     * expressions
-     *   : SEMI* statement{SEMI+} SEMI*
-     */
+  /**
+   * expressions
+   *   : SEMI* statement{SEMI+} SEMI*
+   */
   @JvmOverloads
   fun parseStatements(isScriptTopLevel: Boolean = false) {
     while (at(SEMICOLON)) advance() // SEMICOLON
@@ -1041,14 +1051,17 @@ open class KotlinExpressionParsing(
     }
   }
 
-  /*
-     * statement
-     *  : declaration
-     *  : blockLevelExpression
-     *  ;
-     */
+  /**
+   * statement
+   *  : declaration
+   *  : blockLevelExpression
+   *  ;
+   */
   private fun parseStatement(isScriptTopLevel: Boolean) {
-    if (!/* rollbackIfDefinitelyNotExpression = *//* isScriptTopLevel = */parseLocalDeclaration(
+    if (!
+      /** rollbackIfDefinitelyNotExpression = */
+      /** isScriptTopLevel = */
+      parseLocalDeclaration(
         false,
         isScriptTopLevel
       )
@@ -1065,11 +1078,11 @@ open class KotlinExpressionParsing(
     }
   }
 
-  /*
-     * blockLevelExpression
-     *  : annotations + ("\n")+ expression
-     *  ;
-     */
+  /**
+   * blockLevelExpression
+   *  : annotations + ("\n")+ expression
+   *  ;
+   */
   private fun parseBlockLevelExpression() {
     if (at(AT)) {
       val expression = mark()
@@ -1089,16 +1102,16 @@ open class KotlinExpressionParsing(
     parseExpression()
   }
 
-  /*
-     * declaration
-     *   : function
-     *   : property
-     *   : extension
-     *   : class
-     *   : typeAlias
-     *   : object
-     *   ;
-     */
+  /**
+   * declaration
+   *   : function
+   *   : property
+   *   : extension
+   *   : class
+   *   : typeAlias
+   *   : object
+   *   ;
+   */
   private fun parseLocalDeclarationRest(
     isEnum: Boolean,
     failIfDefinitelyNotExpression: Boolean,
@@ -1108,16 +1121,19 @@ open class KotlinExpressionParsing(
     var declType: IElementType? = null
 
     if (failIfDefinitelyNotExpression) {
-      return if (keywordToken !== FUN_KEYWORD) null else myKotlinParsing.parseFunction(/* failIfIdentifierExists = */
+      return if (keywordToken !== FUN_KEYWORD) null else myKotlinParsing.parseFunction(
+        /** failIfIdentifierExists = */
         true
       )
 
     }
 
     when {
-      keywordToken === CLASS_KEYWORD || keywordToken === INTERFACE_KEYWORD -> declType = myKotlinParsing.parseClass(isEnum)
+      keywordToken === CLASS_KEYWORD || keywordToken === INTERFACE_KEYWORD -> declType =
+          myKotlinParsing.parseClass(isEnum)
       keywordToken === FUN_KEYWORD -> declType = myKotlinParsing.parseFunction()
-      keywordToken === VAL_KEYWORD || keywordToken === VAR_KEYWORD -> declType = myKotlinParsing.parseLocalProperty(isScriptTopLevel)
+      keywordToken === VAL_KEYWORD || keywordToken === VAR_KEYWORD -> declType =
+          myKotlinParsing.parseLocalProperty(isScriptTopLevel)
       keywordToken === TYPE_ALIAS_KEYWORD -> declType = myKotlinParsing.parseTypeAlias()
       keywordToken === OBJECT_KEYWORD -> {
         // Object expression may appear at the statement position: should parse it
@@ -1139,11 +1155,11 @@ open class KotlinExpressionParsing(
     return declType
   }
 
-  /*
-     * doWhile
-     *   : "do" element "while" "(" element ")"
-     *   ;
-     */
+  /**
+   * doWhile
+   *   : "do" element "while" "(" element ")"
+   *   ;
+   */
   private fun parseDoWhile() {
     assert(_at(DO_KEYWORD))
 
@@ -1162,11 +1178,11 @@ open class KotlinExpressionParsing(
     loop.done(DO_WHILE)
   }
 
-  /*
-     * while
-     *   : "while" "(" element ")" element
-     *   ;
-     */
+  /**
+   * while
+   *   : "while" "(" element ")" element
+   *   ;
+   */
   private fun parseWhile() {
     assert(_at(WHILE_KEYWORD))
 
@@ -1181,13 +1197,13 @@ open class KotlinExpressionParsing(
     loop.done(WHILE)
   }
 
-  /*
-     * for
-     *   : "for" "(" annotations ("val" | "var")? (multipleVariableDeclarations | variableDeclarationEntry) "in" expression ")" expression
-     *   ;
-     *
-     *   TODO: empty loop body (at the end of the block)?
-     */
+  /**
+   * for
+   *   : "for" "(" annotations ("val" | "var")? (multipleVariableDeclarations | variableDeclarationEntry) "in" expression ")" expression
+   *   ;
+   *
+   *   TODO: empty loop body (at the end of the block)?
+   */
   private fun parseFor() {
     assert(_at(FOR_KEYWORD))
 
@@ -1240,14 +1256,17 @@ open class KotlinExpressionParsing(
   }
 
   private fun parseControlStructureBody() {
-    if (!/* preferBlock = */parseAnnotatedLambda(true)) {
+    if (!
+      /** preferBlock = */
+      parseAnnotatedLambda(true)
+    ) {
       parseBlockLevelExpression()
     }
   }
 
-  /*
-     * element
-     */
+  /**
+   * element
+   */
   private fun parseLoopBody() {
     val body = mark()
     if (!at(SEMICOLON)) {
@@ -1256,18 +1275,18 @@ open class KotlinExpressionParsing(
     body.done(BODY)
   }
 
-  /*
-     * try
-     *   : "try" block catchBlock* finallyBlock?
-     *   ;
-     * catchBlock
-     *   : "catch" "(" annotations SimpleName ":" userType ")" block
-     *   ;
-     *
-     * finallyBlock
-     *   : "finally" block
-     *   ;
-     */
+  /**
+   * try
+   *   : "try" block catchBlock* finallyBlock?
+   *   ;
+   * catchBlock
+   *   : "catch" "(" annotations SimpleName ":" userType ")" block
+   *   ;
+   *
+   * finallyBlock
+   *   : "finally" block
+   *   ;
+   */
   private fun parseTry() {
     assert(_at(TRY_KEYWORD))
 
@@ -1290,7 +1309,10 @@ open class KotlinExpressionParsing(
         val parameters = mark()
         expect(LPAR, "Expecting '('", recoverySet)
         if (!atSet(recoverySet)) {
-          myKotlinParsing.parseValueParameter(/*typeRequired = */true)
+          myKotlinParsing.parseValueParameter(
+            /**typeRequired = */
+            true
+          )
           expect(RPAR, "Expecting ')'", recoverySet)
         } else {
           error("Expecting exception variable declaration")
@@ -1324,11 +1346,11 @@ open class KotlinExpressionParsing(
     tryExpression.done(TRY)
   }
 
-  /*
-     * if
-     *   : "if" "(" element ")" element SEMI? ("else" element)?
-     *   ;
-     */
+  /**
+   * if
+   *   : "if" "(" element ")" element SEMI? ("else" element)?
+   *   ;
+   */
   private fun parseIf() {
     assert(_at(IF_KEYWORD))
 
@@ -1361,9 +1383,9 @@ open class KotlinExpressionParsing(
     marker.done(IF)
   }
 
-  /*
-     * "(" element ")"
-     */
+  /**
+   * "(" element ")"
+   */
   private fun parseCondition() {
     myBuilder.disableNewlines()
 
@@ -1377,10 +1399,10 @@ open class KotlinExpressionParsing(
     myBuilder.restoreNewlinesState()
   }
 
-  /*
-     * : "continue" getEntryPoint?
-     * : "break" getEntryPoint?
-     */
+  /**
+   * : "continue" getEntryPoint?
+   * : "break" getEntryPoint?
+   */
   private fun parseJump(type: KtNodeType) {
     assert(_at(BREAK_KEYWORD) || _at(CONTINUE_KEYWORD))
 
@@ -1393,9 +1415,9 @@ open class KotlinExpressionParsing(
     marker.done(type)
   }
 
-  /*
-     * "return" getEntryPoint? element?
-     */
+  /**
+   * "return" getEntryPoint? element?
+   */
   private fun parseReturn() {
     assert(_at(RETURN_KEYWORD))
 
@@ -1410,9 +1432,9 @@ open class KotlinExpressionParsing(
     returnExpression.done(RETURN)
   }
 
-  /*
-     * labelReference?
-     */
+  /**
+   * labelReference?
+   */
   private fun parseLabelReferenceWithNoWhitespace() {
     if (at(AT) && !myBuilder.newlineBeforeCurrentToken()) {
       if (WHITE_SPACE_OR_COMMENT_BIT_SET.contains(myBuilder.rawLookup(-1))) {
@@ -1422,9 +1444,9 @@ open class KotlinExpressionParsing(
     }
   }
 
-  /*
-     * IDENTIFIER "@"
-     */
+  /**
+   * IDENTIFIER "@"
+   */
   private fun parseLabelDefinition() {
     val labelWrap = mark()
     val mark = mark()
@@ -1439,9 +1461,9 @@ open class KotlinExpressionParsing(
     labelWrap.done(LABEL_QUALIFIER)
   }
 
-  /*
-     * "@" IDENTIFIER
-     */
+  /**
+   * "@" IDENTIFIER
+   */
   private fun parseLabelReference() {
     assert(_at(AT))
 
@@ -1464,9 +1486,9 @@ open class KotlinExpressionParsing(
     labelWrap.done(LABEL_QUALIFIER)
   }
 
-  /*
-     * : "throw" element
-     */
+  /**
+   * : "throw" element
+   */
   private fun parseThrow() {
     assert(_at(THROW_KEYWORD))
 
@@ -1479,9 +1501,9 @@ open class KotlinExpressionParsing(
     marker.done(THROW)
   }
 
-  /*
-     * "(" expression ")"
-     */
+  /**
+   * "(" expression ")"
+   */
   private fun parseParenthesizedExpression() {
     assert(_at(LPAR))
 
@@ -1501,9 +1523,9 @@ open class KotlinExpressionParsing(
     mark.done(PARENTHESIZED)
   }
 
-  /*
-     * "this" label?
-     */
+  /**
+   * "this" label?
+   */
   private fun parseThisExpression() {
     assert(_at(THIS_KEYWORD))
     val mark = mark()
@@ -1517,9 +1539,9 @@ open class KotlinExpressionParsing(
     mark.done(THIS_EXPRESSION)
   }
 
-  /*
-     * "this" ("<" type ">")? label?
-     */
+  /**
+   * "this" ("<" type ">")? label?
+   */
   private fun parseSuperExpression() {
     assert(_at(SUPER_KEYWORD))
     val mark = mark()
@@ -1550,11 +1572,11 @@ open class KotlinExpressionParsing(
     mark.done(SUPER_EXPRESSION)
   }
 
-  /*
-     * valueArguments
-     *   : "(" (SimpleName "=")? "*"? element{","} ")"
-     *   ;
-     */
+  /**
+   * valueArguments
+   *   : "(" (SimpleName "=")? "*"? element{","} ")"
+   *   ;
+   */
   fun parseValueArgumentList() {
     val list = mark()
 
@@ -1585,9 +1607,9 @@ open class KotlinExpressionParsing(
     list.done(VALUE_ARGUMENT_LIST)
   }
 
-  /*
-     * (SimpleName "=")? "*"? element
-     */
+  /**
+   * (SimpleName "=")? "*"? element
+   */
   private fun parseValueArgument() {
     val argument = mark()
     if (at(IDENTIFIER) && lookahead(1) === EQ) {
@@ -1605,9 +1627,9 @@ open class KotlinExpressionParsing(
     argument.done(VALUE_ARGUMENT)
   }
 
-  /*
-     * "object" (":" delegationSpecifier{","})? classBody // Cannot make class body optional: foo(object : F, A)
-     */
+  /**
+   * "object" (":" delegationSpecifier{","})? classBody // Cannot make class body optional: foo(object : F, A)
+   */
   fun parseObjectLiteral() {
     val literal = mark()
     val declaration = mark()
@@ -1717,7 +1739,8 @@ open class KotlinExpressionParsing(
       COLON
     )
 
-    /*package*/ internal val EXPRESSION_FIRST = TokenSet.create(
+    /**package*/
+    internal val EXPRESSION_FIRST = TokenSet.create(
       // Prefix
       MINUS, PLUS, MINUSMINUS, PLUSPLUS,
       EXCL, EXCLEXCL, // Joining complex tokens makes it necessary to put EXCLEXCL here
@@ -1780,7 +1803,8 @@ open class KotlinExpressionParsing(
       TokenSet.create(EOL_OR_SEMICOLON)
     )
 
-    /*package*/ internal val EXPRESSION_FOLLOW = TokenSet.create(
+    /**package*/
+    internal val EXPRESSION_FOLLOW = TokenSet.create(
       EOL_OR_SEMICOLON, ARROW, COMMA, RBRACE, RPAR, RBRACKET
     )
 
@@ -1833,7 +1857,8 @@ open class KotlinExpressionParsing(
       }
     }
   }
-}/*
-     * expressions
-     *   : SEMI* statement{SEMI+} SEMI*
-     */
+}
+/**
+ * expressions
+ *   : SEMI* statement{SEMI+} SEMI*
+ */
