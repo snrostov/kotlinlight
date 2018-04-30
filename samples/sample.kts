@@ -1,2 +1,6 @@
-println("Hello, world!")
-println(2 + 2)
+class Test<T> {
+  fun test(x: String): Int {
+    println("test")
+    return 1
+  }
+}

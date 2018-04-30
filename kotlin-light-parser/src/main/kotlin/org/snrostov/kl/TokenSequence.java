@@ -68,18 +68,20 @@ class TokenSequence {
                 IElementType type = myLexer.getTokenType();
                 if (type == null) break;
 
-//                if (i % 20 == 0) ProgressIndicatorProvider.checkCanceled();
-
-                if (i >= myLexTypes.length - 1) {
-                    resizeLexemes(i * 3 / 2);
-                }
                 int tokenStart = myLexer.getTokenStart();
                 if (tokenStart < offset) {
                     reportDescendingOffsets(i, offset, tokenStart);
                 }
-                myLexStarts[i] = offset = tokenStart;
-                myLexTypes[i] = type;
-                i++;
+
+//                if (!PsiBuilderImplKt.getMyWhitespacesOrComments().contains(type)) {
+                    if (i >= myLexTypes.length - 1) {
+                        resizeLexemes(i * 3 / 2);
+                    }
+                    myLexStarts[i] = offset = tokenStart;
+                    myLexTypes[i] = type;
+                    i++;
+//                }
+
                 myLexer.advance();
             }
 

@@ -27,15 +27,18 @@ import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.lexer.KtTokens.*
 import org.jetbrains.kotlin.parsing.trash.SemanticWhitespaceAwarePsiBuilder
 
-private val myWhitespaces: TokenSet? = KtTokens.WHITESPACES
-private val myComments: TokenSet? = KtTokens.COMMENTS
+val myWhitespaces: TokenSet = KtTokens.WHITESPACES
+val myComments: TokenSet = KtTokens.COMMENTS
+val myWhitespacesOrComments: TokenSet = TokenSet.orSet(myComments, myWhitespaces)
+
 
 class PsiBuilderImpl(
   val text: CharSequence,
   lexer: KotlinLexer = KotlinLexer()
 ) : SemanticWhitespaceAwarePsiBuilder {
   private val tokens = TokenSequence.Builder(text, lexer).performLexing()
-  var pos = 0
+
+  var pos = -1
   val size = tokens.lexemeCount
   val lexType = tokens.lexTypes
   val lexPos = tokens.lexStarts
@@ -49,17 +52,29 @@ class PsiBuilderImpl(
   init {
     newlinesEnabled.push(true)
     joinComplexTokens.push(true)
+    doAdvanceLexer()
   }
+
+  val root = mark()
 
   private fun doGetTokenType() = lexType[pos]
 
-  private fun doLookAhead(steps: Int) = lexType[pos + steps]
+  private fun doLookAhead(steps: Int): IElementType? {
+    var i = 0
+    var pos = pos
+    while (i < steps) {
+      if (!myWhitespacesOrComments.contains(lexType[pos])) i++
+      pos++
+    }
+    return lexType[pos]
+  }
 
   private fun doGetTokenText(): String? =
     text.subSequence(lexPos[pos], lexPos[pos + 1]).toString()
 
   private fun doAdvanceLexer() {
     pos++
+    while (myWhitespacesOrComments.contains(lexType[pos])) pos++
   }
 
   override fun getOriginalText(): CharSequence? = text
@@ -76,30 +91,87 @@ class PsiBuilderImpl(
 
   override fun getCurrentOffset(): Int = lexPos[pos]
 
-  override fun mark(): PsiBuilder.Marker {
-    return StartMarker(pos)
+  var leaf: Node? = null
+
+  override fun mark(): Node {
+    return Node(pos, leaf).also {
+      leaf = it
+    }
   }
 
-  inner class StartMarker(val start: Int) : PsiBuilder.Marker {
+  inner class Node(val start: Int, var parent: Node?) : PsiBuilder.Marker {
+    var open = true
     var end = -1
-    lateinit var type: IElementType
 
-    override fun precede() = StartMarker(start)
+    var type: IElementType? = null
+
+    val children = mutableListOf<Node>()
+
+    init {
+      parent?.children?.add(this)
+    }
+
+    override fun precede(): Node {
+      return Node(start, parent).also {
+        parent = it
+        it.children.add(this)
+      }
+    }
 
     override fun drop() {
+      check(open)
 
+      val parent = this.parent!!
+      check(parent.children.remove(this))
+
+      parent.children.addAll(children)
+      children.forEach {
+        it.parent = parent
+      }
+
+      leaf = parent
+      open = false
     }
 
     override fun rollbackTo() {
+      check(open)
+
       pos = start
+      leaf = parent
+
+      val parent = this.parent!!
+      check(parent.children.remove(this))
+
+//      dropWithChildren()
+    }
+
+    private fun dropWithChildren() {
+      check(open)
+      open = false
+      children.forEach {
+        if (it.open) {
+          it.dropWithChildren()
+        }
+      }
     }
 
     override fun done(type: IElementType) {
-      check(end == -1)
-      end = pos
-      this.type = type
+      check(open)
+//      checkChildClosed()
 
-      println(this)
+      end = pos
+
+      this.type = type
+      leaf = parent
+
+      dropWithChildren()
+    }
+
+    private fun checkChildClosed() {
+      children.forEach {
+        check(!it.open)
+        it.checkChildClosed()
+      }
     }
 
     override fun collapse(type: IElementType) = done(type)
@@ -119,7 +191,26 @@ class PsiBuilderImpl(
     }
 
     override fun toString(): String {
-      return "$type($start..$end) $error"
+      return "$type: " +
+          (if (error != null) "[ERROR: $error]" else "") +
+          text
+    }
+
+    val text: String
+      get() = if (!open) this@PsiBuilderImpl.text.substring(lexPos[start], lexPos[end])
+      else this@PsiBuilderImpl.text.substring(lexPos[start], this@PsiBuilderImpl.text.length)
+
+    fun printTo(out: IndentedAppendable) {
+      if (children.isEmpty()) {
+        out.appendln("$type: $text")
+      } else {
+        out.appendln("$type")
+        out.nested { nested ->
+          children.forEach {
+            it.printTo(nested)
+          }
+        }
+      }
     }
   }
 
@@ -132,7 +223,7 @@ class PsiBuilderImpl(
   }
 
   override fun isWhitespaceOrComment(token: IElementType): Boolean {
-    return myWhitespaces!!.contains(token) || myComments!!.contains(token)
+    return myWhitespaces.contains(token) || myComments.contains(token)
   }
 
   /////////
