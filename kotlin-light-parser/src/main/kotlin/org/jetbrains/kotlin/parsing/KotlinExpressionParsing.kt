@@ -42,7 +42,7 @@ open class KotlinExpressionParsing(
   private val isAtLabelDefinitionOrMissingIdentifier: Boolean
     get() = at(IDENTIFIER) && myBuilder.rawLookup(1) === AT || at(AT)
 
-  enum class Precedence private constructor(vararg operations: IElementType) {
+  enum class Precedence(vararg operations: IElementType) {
     POSTFIX(
       PLUSPLUS, MINUSMINUS, EXCLEXCL,
       DOT, SAFE_ACCESS

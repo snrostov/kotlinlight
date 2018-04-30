@@ -1,4 +1,4 @@
-import org.jetbrains.kotlin.parsing.KotlinParsing
+import org.jetbrains.kotlin.parsing.topLevelKotlinParsing
 import org.junit.Assert
 import org.junit.Test
 import org.snrostov.kl.IndentedAppendable
@@ -15,7 +15,7 @@ class SmokeTest {
     val file = File("/Users/sergey/p/kotlinlight/samples/$fileName")
     val text = file.readText()
     val psiBuilderImpl = PsiBuilderImpl(text)
-    val kotlinParsing = KotlinParsing.createForTopLevel(psiBuilderImpl)
+    val kotlinParsing = topLevelKotlinParsing(psiBuilderImpl)
     kotlinParsing.parseFile()
     val actual = IndentedAppendable()
     psiBuilderImpl.root.children.single().printTo(actual)

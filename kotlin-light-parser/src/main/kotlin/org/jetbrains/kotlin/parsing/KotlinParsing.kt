@@ -28,9 +28,61 @@ import org.jetbrains.kotlin.lexer.KtTokens.*
 import org.jetbrains.kotlin.parsing.KotlinParsing.AnnotationParsingMode.*
 import org.jetbrains.kotlin.parsing.trash.*
 
-class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuilder) : AbstractKotlinParsing(builder) {
+private val TOP_LEVEL_DECLARATION_FIRST = TokenSet.create(
+  TYPE_ALIAS_KEYWORD, INTERFACE_KEYWORD, CLASS_KEYWORD, OBJECT_KEYWORD,
+  FUN_KEYWORD, VAL_KEYWORD, PACKAGE_KEYWORD
+)
+private val DECLARATION_FIRST = TokenSet.orSet(
+  TOP_LEVEL_DECLARATION_FIRST,
+  TokenSet.create(INIT_KEYWORD, GET_KEYWORD, SET_KEYWORD, CONSTRUCTOR_KEYWORD)
+)
 
-  private var myExpressionParsing: KotlinExpressionParsing? = null
+private val CLASS_NAME_RECOVERY_SET = TokenSet.orSet(
+  TokenSet.create(LT, LPAR, COLON, LBRACE),
+  TOP_LEVEL_DECLARATION_FIRST
+)
+private val TYPE_PARAMETER_GT_RECOVERY_SET = TokenSet.create(WHERE_KEYWORD, LPAR, COLON, LBRACE, GT)
+private val PARAMETER_NAME_RECOVERY_SET = TokenSet.create(COLON, EQ, COMMA, RPAR, VAL_KEYWORD, VAR_KEYWORD)
+private val PACKAGE_NAME_RECOVERY_SET = TokenSet.create(DOT, EOL_OR_SEMICOLON)
+private val IMPORT_RECOVERY_SET = TokenSet.create(AS_KEYWORD, DOT, EOL_OR_SEMICOLON)
+private val TYPE_REF_FIRST = TokenSet.create(LBRACKET, IDENTIFIER, LPAR, HASH, DYNAMIC_KEYWORD)
+private val RECEIVER_TYPE_TERMINATORS = TokenSet.create(DOT, SAFE_ACCESS)
+private val VALUE_PARAMETER_FIRST =
+  TokenSet.orSet(TokenSet.create(IDENTIFIER, LBRACKET, VAL_KEYWORD, VAR_KEYWORD), MODIFIER_KEYWORDS)
+private val LAMBDA_VALUE_PARAMETER_FIRST = TokenSet.orSet(TokenSet.create(IDENTIFIER, LBRACKET), MODIFIER_KEYWORDS)
+private val SOFT_KEYWORDS_AT_MEMBER_START = TokenSet.create(CONSTRUCTOR_KEYWORD, INIT_KEYWORD)
+private val ANNOTATION_TARGETS = TokenSet.create(
+  FILE_KEYWORD, FIELD_KEYWORD, GET_KEYWORD, SET_KEYWORD, PROPERTY_KEYWORD,
+  RECEIVER_KEYWORD, PARAM_KEYWORD, SETPARAM_KEYWORD, DELEGATE_KEYWORD
+)
+
+fun topLevelKotlinParsing(builder: SemanticWhitespaceAwarePsiBuilder): KotlinParsing {
+  val kotlinParsing = KotlinParsing(builder)
+  kotlinParsing.myExpressionParsing = KotlinExpressionParsing(builder, kotlinParsing)
+  return kotlinParsing
+}
+
+private fun createForByClause(builder: SemanticWhitespaceAwarePsiBuilder): KotlinParsing {
+  val builderForByClause = SemanticWhitespaceAwarePsiBuilderForByClause(builder)
+  val kotlinParsing = KotlinParsing(builderForByClause)
+  kotlinParsing.myExpressionParsing = object : KotlinExpressionParsing(builderForByClause, kotlinParsing) {
+    override fun parseCallWithClosure(): Boolean {
+      return if (builderForByClause.stackSize > 0) {
+        super.parseCallWithClosure()
+      } else false
+    }
+
+    override fun create(builder: SemanticWhitespaceAwarePsiBuilder): KotlinParsing {
+      return createForByClause(builder)
+    }
+  }
+  return kotlinParsing
+}
+
+private val NO_MODIFIER_BEFORE_FOR_VALUE_PARAMETER = TokenSet.create(COMMA, COLON, EQ, RPAR)
+
+class KotlinParsing internal constructor(builder: SemanticWhitespaceAwarePsiBuilder) : AbstractKotlinParsing(builder) {
+  internal var myExpressionParsing: KotlinExpressionParsing? = null
 
   /**
    * [start] kotlinFile
@@ -2260,7 +2312,7 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
   }
 
   public override fun create(builder: SemanticWhitespaceAwarePsiBuilder): KotlinParsing {
-    return createForTopLevel(builder)
+    return topLevelKotlinParsing(builder)
   }
 
   /**package*/
@@ -2287,61 +2339,6 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     FILE_ANNOTATIONS_BEFORE_PACKAGE(true, true),
     FILE_ANNOTATIONS_WHEN_PACKAGE_OMITTED(true, true),
     NO_ANNOTATIONS(false, false)
-  }
-
-  companion object {
-    private val TOP_LEVEL_DECLARATION_FIRST = TokenSet.create(
-      TYPE_ALIAS_KEYWORD, INTERFACE_KEYWORD, CLASS_KEYWORD, OBJECT_KEYWORD,
-      FUN_KEYWORD, VAL_KEYWORD, PACKAGE_KEYWORD
-    )
-    private val DECLARATION_FIRST = TokenSet.orSet(
-      TOP_LEVEL_DECLARATION_FIRST,
-      TokenSet.create(INIT_KEYWORD, GET_KEYWORD, SET_KEYWORD, CONSTRUCTOR_KEYWORD)
-    )
-
-    private val CLASS_NAME_RECOVERY_SET = TokenSet.orSet(
-      TokenSet.create(LT, LPAR, COLON, LBRACE),
-      TOP_LEVEL_DECLARATION_FIRST
-    )
-    private val TYPE_PARAMETER_GT_RECOVERY_SET = TokenSet.create(WHERE_KEYWORD, LPAR, COLON, LBRACE, GT)
-    private val PARAMETER_NAME_RECOVERY_SET = TokenSet.create(COLON, EQ, COMMA, RPAR, VAL_KEYWORD, VAR_KEYWORD)
-    private val PACKAGE_NAME_RECOVERY_SET = TokenSet.create(DOT, EOL_OR_SEMICOLON)
-    private val IMPORT_RECOVERY_SET = TokenSet.create(AS_KEYWORD, DOT, EOL_OR_SEMICOLON)
-    private val TYPE_REF_FIRST = TokenSet.create(LBRACKET, IDENTIFIER, LPAR, HASH, DYNAMIC_KEYWORD)
-    private val RECEIVER_TYPE_TERMINATORS = TokenSet.create(DOT, SAFE_ACCESS)
-    private val VALUE_PARAMETER_FIRST =
-      TokenSet.orSet(TokenSet.create(IDENTIFIER, LBRACKET, VAL_KEYWORD, VAR_KEYWORD), MODIFIER_KEYWORDS)
-    private val LAMBDA_VALUE_PARAMETER_FIRST = TokenSet.orSet(TokenSet.create(IDENTIFIER, LBRACKET), MODIFIER_KEYWORDS)
-    private val SOFT_KEYWORDS_AT_MEMBER_START = TokenSet.create(CONSTRUCTOR_KEYWORD, INIT_KEYWORD)
-    private val ANNOTATION_TARGETS = TokenSet.create(
-      FILE_KEYWORD, FIELD_KEYWORD, GET_KEYWORD, SET_KEYWORD, PROPERTY_KEYWORD,
-      RECEIVER_KEYWORD, PARAM_KEYWORD, SETPARAM_KEYWORD, DELEGATE_KEYWORD
-    )
-
-    fun createForTopLevel(builder: SemanticWhitespaceAwarePsiBuilder): KotlinParsing {
-      val kotlinParsing = KotlinParsing(builder)
-      kotlinParsing.myExpressionParsing = KotlinExpressionParsing(builder, kotlinParsing)
-      return kotlinParsing
-    }
-
-    private fun createForByClause(builder: SemanticWhitespaceAwarePsiBuilder): KotlinParsing {
-      val builderForByClause = SemanticWhitespaceAwarePsiBuilderForByClause(builder)
-      val kotlinParsing = KotlinParsing(builderForByClause)
-      kotlinParsing.myExpressionParsing = object : KotlinExpressionParsing(builderForByClause, kotlinParsing) {
-        override fun parseCallWithClosure(): Boolean {
-          return if (builderForByClause.stackSize > 0) {
-            super.parseCallWithClosure()
-          } else false
-        }
-
-        override fun create(builder: SemanticWhitespaceAwarePsiBuilder): KotlinParsing {
-          return createForByClause(builder)
-        }
-      }
-      return kotlinParsing
-    }
-
-    private val NO_MODIFIER_BEFORE_FOR_VALUE_PARAMETER = TokenSet.create(COMMA, COLON, EQ, RPAR)
   }
 }
 /**

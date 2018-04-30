@@ -1,5 +1,5 @@
 import org.jetbrains.kotlin.lexer.KtTokens
-import org.jetbrains.kotlin.parsing.KotlinParsing
+import org.jetbrains.kotlin.parsing.topLevelKotlinParsing
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -20,7 +20,7 @@ class TestData(val fileName: String) {
     val file = File(dirPath + fileName)
     val text = file.readText()
     val builderImpl = PsiBuilderImpl(text)
-    val kotlinParsing = KotlinParsing.createForTopLevel(builderImpl)
+    val kotlinParsing = topLevelKotlinParsing(builderImpl)
     kotlinParsing.parseFile()
 
     val out = IndentedAppendable(indentIncrement = "  ")
