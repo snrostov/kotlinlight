@@ -342,21 +342,21 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
                 expression.done(ANNOTATED_EXPRESSION);
             }
         } else {
-            myBuilder.disableJoiningComplexTokens();
+            getMyBuilder().disableJoiningComplexTokens();
             if (isAtLabelDefinitionOrMissingIdentifier()) {
-                myBuilder.restoreJoiningComplexTokensState();
+                getMyBuilder().restoreJoiningComplexTokensState();
                 parseLabeledExpression();
             } else if (atSet(Precedence.PREFIX.getOperations())) {
                 PsiBuilder.Marker expression = mark();
 
                 parseOperationReference();
 
-                myBuilder.restoreJoiningComplexTokensState();
+                getMyBuilder().restoreJoiningComplexTokensState();
 
                 parsePrefixExpression();
                 expression.done(PREFIX_EXPRESSION);
             } else {
-                myBuilder.restoreJoiningComplexTokensState();
+                getMyBuilder().restoreJoiningComplexTokensState();
                 parsePostfixExpression();
             }
         }
@@ -390,7 +390,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
             }
         }
 
-        if (at(LPAR) && !myBuilder.newlineBeforeCurrentToken()) {
+        if (at(LPAR) && !getMyBuilder().newlineBeforeCurrentToken()) {
             PsiBuilder.Marker lpar = mark();
             parseCallSuffix();
             lpar.error("This syntax is reserved for future use; to call a reference, enclose it in parentheses: (foo::bar)(args)");
@@ -486,7 +486,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
             PsiBuilder.Marker typeArgumentList = mark();
             if (myKotlinParsing.tryParseTypeArgumentList(TYPE_ARGUMENT_LIST_STOPPERS)) {
                 typeArgumentList.done(TYPE_ARGUMENT_LIST);
-                if (!myBuilder.newlineBeforeCurrentToken() && at(LPAR)) parseValueArgumentList();
+                if (!getMyBuilder().newlineBeforeCurrentToken() && at(LPAR)) parseValueArgumentList();
                 parseCallWithClosure();
             } else {
                 typeArgumentList.rollbackTo();
@@ -505,7 +505,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
     private void parseSelectorCallExpression() {
         PsiBuilder.Marker mark = mark();
         parseAtomicExpression();
-        if (!myBuilder.newlineBeforeCurrentToken() && parseCallSuffix()) {
+        if (!getMyBuilder().newlineBeforeCurrentToken() && parseCallSuffix()) {
             mark.done(CALL_EXPRESSION);
         } else {
             mark.drop();
@@ -580,7 +580,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
     }
 
     private boolean isAtLabelDefinitionOrMissingIdentifier() {
-        return (at(IDENTIFIER) && myBuilder.rawLookup(1) == AT) || at(AT);
+        return (at(IDENTIFIER) && getMyBuilder().rawLookup(1) == AT) || at(AT);
     }
 
     /*
@@ -634,7 +634,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
         } else if (at(DO_KEYWORD)) {
             parseDoWhile();
         } else if (atSet(LOCAL_DECLARATION_FIRST) &&
-                parseLocalDeclaration(/* rollbackIfDefinitelyNotExpression = */ myBuilder.newlineBeforeCurrentToken(), false)) {
+                parseLocalDeclaration(/* rollbackIfDefinitelyNotExpression = */ getMyBuilder().newlineBeforeCurrentToken(), false)) {
             // declaration was parsed, do nothing
         } else if (at(IDENTIFIER)) {
             parseSimpleNameExpression();
@@ -710,9 +710,9 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
                 reference.done(REFERENCE_EXPRESSION);
                 thisExpression.done(THIS_EXPRESSION);
             } else {
-                KtToken keyword = KEYWORD_TEXTS.get(myBuilder.getTokenText());
+                KtToken keyword = KEYWORD_TEXTS.get(getMyBuilder().getTokenText());
                 if (keyword != null) {
-                    myBuilder.remapCurrentToken(keyword);
+                    getMyBuilder().remapCurrentToken(keyword);
                     errorAndAdvance("Keyword cannot be used as a reference");
                 } else {
                     PsiBuilder.Marker reference = mark();
@@ -728,7 +728,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
             advance(); // LONG_TEMPLATE_ENTRY_START
 
             while (!eof()) {
-                int offset = myBuilder.getCurrentOffset();
+                int offset = getMyBuilder().getCurrentOffset();
 
                 parseExpression();
 
@@ -737,7 +737,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
                     break;
                 } else {
                     error("Expecting '}'");
-                    if (offset == myBuilder.getCurrentOffset()) {
+                    if (offset == getMyBuilder().getCurrentOffset()) {
                         // Prevent hang if can't advance with parseExpression()
                         advance();
                     }
@@ -793,7 +793,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
         advance(); // WHEN_KEYWORD
 
         // Parse condition
-        myBuilder.disableNewlines();
+        getMyBuilder().disableNewlines();
         if (at(LPAR)) {
             advanceAt(LPAR);
 
@@ -809,10 +809,10 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
 
             expect(RPAR, "Expecting ')'");
         }
-        myBuilder.restoreNewlinesState();
+        getMyBuilder().restoreNewlinesState();
 
         // Parse when block
-        myBuilder.enableNewlines();
+        getMyBuilder().enableNewlines();
         if (expect(LBRACE, "Expecting '{'")) {
             while (!eof() && !at(RBRACE)) {
                 parseWhenEntry();
@@ -820,7 +820,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
 
             expect(RBRACE, "Expecting '}'");
         }
-        myBuilder.restoreNewlinesState();
+        getMyBuilder().restoreNewlinesState();
 
         when.done(WHEN);
     }
@@ -892,7 +892,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
      */
     private void parseWhenCondition() {
         PsiBuilder.Marker condition = mark();
-        myBuilder.disableNewlines();
+        getMyBuilder().disableNewlines();
         if (at(IN_KEYWORD) || at(NOT_IN)) {
             PsiBuilder.Marker mark = mark();
             advance(); // IN_KEYWORD or NOT_IN
@@ -922,7 +922,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
             }
             condition.done(WHEN_CONDITION_EXPRESSION);
         }
-        myBuilder.restoreNewlinesState();
+        getMyBuilder().restoreNewlinesState();
     }
 
     /*
@@ -948,7 +948,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
 
         PsiBuilder.Marker innerExpressions = mark();
 
-        myBuilder.disableNewlines();
+        getMyBuilder().disableNewlines();
         advance(); // LBRACKET
 
         if (!canBeEmpty && at(RBRACKET)) {
@@ -958,7 +958,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
         }
 
         expect(RBRACKET, "Expecting ']'");
-        myBuilder.restoreNewlinesState();
+        getMyBuilder().restoreNewlinesState();
 
         innerExpressions.done(nodeType);
     }
@@ -1005,7 +1005,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
 
         if (declType != null) {
             // we do not attach preceding comments (non-doc) to local variables because they are likely commenting a few statements below
-            closeDeclarationWithCommentBinders(decl, declType,
+            Companion.closeDeclarationWithCommentBinders(decl, declType,
                     declType != KtNodeTypes.PROPERTY && declType != KtNodeTypes.DESTRUCTURING_DECLARATION);
             return true;
         } else {
@@ -1034,7 +1034,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
 
         PsiBuilder.Marker literal = mark();
 
-        myBuilder.enableNewlines();
+        getMyBuilder().enableNewlines();
         advance(); // LBRACE
 
         boolean paramsFound = false;
@@ -1064,7 +1064,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
             parseStatements();
             expect(RBRACE, "Expecting '}'");
             literalExpression.done(BLOCK);
-            myBuilder.restoreNewlinesState();
+            getMyBuilder().restoreNewlinesState();
 
             return;
         }
@@ -1085,7 +1085,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
             literalExpression.done(LAMBDA_EXPRESSION);
         }
 
-        myBuilder.restoreNewlinesState();
+        getMyBuilder().restoreNewlinesState();
     }
 
     private void advanceLambdaBlock() {
@@ -1200,7 +1200,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
                 while (at(SEMICOLON)) advance(); // SEMICOLON
             } else if (at(RBRACE)) {
                 break;
-            } else if (!myBuilder.newlineBeforeCurrentToken()) {
+            } else if (!getMyBuilder().newlineBeforeCurrentToken()) {
                 String severalStatementsError = "Unexpected tokens (use ';' to separate expressions on the same line)";
 
                 if (atSet(STATEMENT_NEW_LINE_QUICK_RECOVERY_SET)) {
@@ -1242,7 +1242,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
             PsiBuilder.Marker expression = mark();
             myKotlinParsing.parseAnnotations(DEFAULT);
 
-            if (!myBuilder.newlineBeforeCurrentToken()) {
+            if (!getMyBuilder().newlineBeforeCurrentToken()) {
                 expression.rollbackTo();
                 parseExpression();
                 return;
@@ -1361,7 +1361,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
         advance(); // FOR_KEYWORD
 
         if (expect(LPAR, "Expecting '(' to open a loop range", EXPRESSION_FIRST)) {
-            myBuilder.disableNewlines();
+            getMyBuilder().disableNewlines();
 
             if (!at(RPAR)) {
                 PsiBuilder.Marker parameter = mark();
@@ -1396,7 +1396,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
             }
 
             expectNoAdvance(RPAR, "Expecting ')'");
-            myBuilder.restoreNewlinesState();
+            getMyBuilder().restoreNewlinesState();
         }
 
         parseLoopBody();
@@ -1530,7 +1530,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
      * "(" element ")"
      */
     private void parseCondition() {
-        myBuilder.disableNewlines();
+        getMyBuilder().disableNewlines();
 
         if (expect(LPAR, "Expecting a condition in parentheses '(...)'", EXPRESSION_FIRST)) {
             PsiBuilder.Marker condition = mark();
@@ -1539,7 +1539,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
             expect(RPAR, "Expecting ')");
         }
 
-        myBuilder.restoreNewlinesState();
+        getMyBuilder().restoreNewlinesState();
     }
 
     /*
@@ -1579,8 +1579,8 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
      * labelReference?
      */
     private void parseLabelReferenceWithNoWhitespace() {
-        if (at(AT) && !myBuilder.newlineBeforeCurrentToken()) {
-            if (WHITE_SPACE_OR_COMMENT_BIT_SET.contains(myBuilder.rawLookup(-1))) {
+        if (at(AT) && !getMyBuilder().newlineBeforeCurrentToken()) {
+            if (WHITE_SPACE_OR_COMMENT_BIT_SET.contains(getMyBuilder().rawLookup(-1))) {
                 error("There should be no space or comments before '@' in label reference");
             }
             parseLabelReference();
@@ -1594,7 +1594,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
         PsiBuilder.Marker labelWrap = mark();
         PsiBuilder.Marker mark = mark();
 
-        assert _at(IDENTIFIER) && myBuilder.rawLookup(1) == AT : "Callers must check that current token is IDENTIFIER followed with '@'";
+        assert _at(IDENTIFIER) && getMyBuilder().rawLookup(1) == AT : "Callers must check that current token is IDENTIFIER followed with '@'";
 
         advance(); // IDENTIFIER
         advance(); // AT
@@ -1614,7 +1614,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
 
         PsiBuilder.Marker mark = mark();
 
-        if (myBuilder.rawLookup(1) != IDENTIFIER) {
+        if (getMyBuilder().rawLookup(1) != IDENTIFIER) {
             errorAndAdvance("Label must be named"); // AT
             labelWrap.drop();
             mark.drop();
@@ -1652,7 +1652,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
 
         PsiBuilder.Marker mark = mark();
 
-        myBuilder.disableNewlines();
+        getMyBuilder().disableNewlines();
         advance(); // LPAR
         if (at(RPAR)) {
             error("Expecting an expression");
@@ -1661,7 +1661,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
         }
 
         expect(RPAR, "Expecting ')'");
-        myBuilder.restoreNewlinesState();
+        getMyBuilder().restoreNewlinesState();
 
         mark.done(PARENTHESIZED);
     }
@@ -1697,7 +1697,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
             // This may be "super < foo" or "super<foo>", thus the backtracking
             PsiBuilder.Marker supertype = mark();
 
-            myBuilder.disableNewlines();
+            getMyBuilder().disableNewlines();
             advance(); // LT
 
             myKotlinParsing.parseTypeRef();
@@ -1708,7 +1708,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
             } else {
                 supertype.rollbackTo();
             }
-            myBuilder.restoreNewlinesState();
+            getMyBuilder().restoreNewlinesState();
         }
         parseLabelReferenceWithNoWhitespace();
 
@@ -1723,7 +1723,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
     public void parseValueArgumentList() {
         PsiBuilder.Marker list = mark();
 
-        myBuilder.disableNewlines();
+        getMyBuilder().disableNewlines();
 
         if (expect(LPAR, "Expecting an argument list", EXPRESSION_FOLLOW)) {
             if (!at(RPAR)) {
@@ -1745,7 +1745,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
             expect(RPAR, "Expecting ')'", EXPRESSION_FOLLOW);
         }
 
-        myBuilder.restoreNewlinesState();
+        getMyBuilder().restoreNewlinesState();
 
         list.done(VALUE_ARGUMENT_LIST);
     }
@@ -1793,6 +1793,6 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
     }
 
     private boolean interruptedWithNewLine() {
-        return !ALLOW_NEWLINE_OPERATIONS.contains(tt()) && myBuilder.newlineBeforeCurrentToken();
+        return !ALLOW_NEWLINE_OPERATIONS.contains(tt()) && getMyBuilder().newlineBeforeCurrentToken();
     }
 }
