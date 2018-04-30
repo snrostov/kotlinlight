@@ -3,12 +3,13 @@ import org.junit.Test
 import org.snrostov.kl.PsiBuilderImpl
 import java.io.File
 
-class SmokeTest {
+class TestData {
   @Test
-  fun test() {
-    val text = File("/Users/sergey/p/kotlinlight/samples/wrapping.kt").readText()
+  fun test(file: File) {
+    val text = file.readText()
     val kotlinParsing = KotlinParsing.createForTopLevel(PsiBuilderImpl(text))
     kotlinParsing.parseFile()
-    println("test")
+
+    val assert = File(file.parent, file.nameWithoutExtension + ".txt").readText()
   }
 }

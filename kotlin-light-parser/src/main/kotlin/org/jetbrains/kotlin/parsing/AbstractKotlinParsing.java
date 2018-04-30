@@ -25,6 +25,7 @@ import org.jetbrains.annotations.TestOnly;
 import org.jetbrains.kotlin.lexer.KtKeywordToken;
 import org.jetbrains.kotlin.lexer.KtToken;
 import org.jetbrains.kotlin.lexer.KtTokens;
+import org.jetbrains.kotlin.parsing.trash.*;
 
 import java.util.HashMap;
 import java.util.Map;

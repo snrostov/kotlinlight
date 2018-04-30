@@ -26,14 +26,15 @@ import org.jetbrains.kotlin.KtNodeTypes;
 import org.jetbrains.kotlin.lexer.KtToken;
 import org.jetbrains.kotlin.lexer.KtTokens;
 import org.jetbrains.kotlin.parsing.KotlinParsing.NameParsingMode;
+import org.jetbrains.kotlin.parsing.trash.SemanticWhitespaceAwarePsiBuilder;
 
 import java.util.*;
 
 import static org.jetbrains.kotlin.KtNodeTypes.*;
 import static org.jetbrains.kotlin.lexer.KtTokens.*;
 import static org.jetbrains.kotlin.parsing.KotlinParsing.AnnotationParsingMode.DEFAULT;
-import static org.jetbrains.kotlin.parsing.KotlinWhitespaceAndCommentsBindersKt.PRECEDING_ALL_COMMENTS_BINDER;
-import static org.jetbrains.kotlin.parsing.KotlinWhitespaceAndCommentsBindersKt.TRAILING_ALL_COMMENTS_BINDER;
+import static org.jetbrains.kotlin.parsing.trash.KotlinWhitespaceAndCommentsBindersKt.PRECEDING_ALL_COMMENTS_BINDER;
+import static org.jetbrains.kotlin.parsing.trash.KotlinWhitespaceAndCommentsBindersKt.TRAILING_ALL_COMMENTS_BINDER;
 
 public class KotlinExpressionParsing extends AbstractKotlinParsing {
     private static final TokenSet WHEN_CONDITION_RECOVERY_SET = TokenSet.create(RBRACE, IN_KEYWORD, NOT_IN, IS_KEYWORD, NOT_IS, ELSE_KEYWORD);

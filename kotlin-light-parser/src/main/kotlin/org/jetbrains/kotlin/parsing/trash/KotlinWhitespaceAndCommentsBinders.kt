@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.jetbrains.kotlin.parsing
+package org.jetbrains.kotlin.parsing.trash
 
 import com.intellij.lang.WhitespacesAndCommentsBinder
 import com.intellij.psi.tree.IElementType
@@ -106,10 +106,12 @@ private class AllCommentsBinder(val isTrailing: Boolean) : WhitespacesAndComment
 }
 
 @JvmField
-val PRECEDING_ALL_COMMENTS_BINDER: WhitespacesAndCommentsBinder = AllCommentsBinder(false)
+val PRECEDING_ALL_COMMENTS_BINDER: WhitespacesAndCommentsBinder =
+    AllCommentsBinder(false)
 
 @JvmField
-val TRAILING_ALL_COMMENTS_BINDER: WhitespacesAndCommentsBinder = AllCommentsBinder(true)
+val TRAILING_ALL_COMMENTS_BINDER: WhitespacesAndCommentsBinder =
+    AllCommentsBinder(true)
 
 object DoNotBindAnything : WhitespacesAndCommentsBinder {
     override fun getEdgePosition(

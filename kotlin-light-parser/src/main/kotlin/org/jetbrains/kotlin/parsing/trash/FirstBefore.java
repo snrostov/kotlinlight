@@ -14,31 +14,26 @@
  * limitations under the License.
  */
 
-package org.jetbrains.kotlin.parsing;
+package org.jetbrains.kotlin.parsing.trash;
 
-import com.intellij.psi.tree.IElementType;
+public class FirstBefore extends AbstractTokenStreamPattern {
+    private final TokenStreamPredicate lookFor;
+    private final TokenStreamPredicate stopAt;
 
-public abstract class AbstractTokenStreamPattern implements TokenStreamPattern {
-
-    protected int lastOccurrence = -1;
-
-    protected void fail() {
-        lastOccurrence = -1;
+    public FirstBefore(TokenStreamPredicate lookFor, TokenStreamPredicate stopAt) {
+        this.lookFor = lookFor;
+        this.stopAt = stopAt;
     }
 
     @Override
-    public int result() {
-        return lastOccurrence;
-    }
-
-    @Override
-    public boolean isTopLevel(int openAngleBrackets, int openBrackets, int openBraces, int openParentheses) {
-        return openBraces == 0 && openBrackets == 0 && openParentheses == 0 && openAngleBrackets == 0;
-    }
-
-    @Override
-    public boolean handleUnmatchedClosing(IElementType token) {
+    public boolean processToken(int offset, boolean topLevel) {
+        if (lookFor.matching(topLevel)) {
+            lastOccurrence = offset;
+            return true;
+        }
+        if (stopAt.matching(topLevel)) {
+            return true;
+        }
         return false;
     }
 }
-

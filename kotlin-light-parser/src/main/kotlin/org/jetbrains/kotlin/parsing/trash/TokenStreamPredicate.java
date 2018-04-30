@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package org.jetbrains.kotlin.parsing;
+package org.jetbrains.kotlin.parsing.trash;
 
-public interface Consumer<T> {
-    void consume(T item);
+public interface TokenStreamPredicate {
+    boolean matching(boolean topLevel);
+
+    TokenStreamPredicate or(TokenStreamPredicate other);
 }

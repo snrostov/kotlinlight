@@ -25,12 +25,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.kotlin.lexer.KtKeywordToken;
 import org.jetbrains.kotlin.lexer.KtTokens;
+import org.jetbrains.kotlin.parsing.trash.*;
 
 import static org.jetbrains.kotlin.KtNodeTypes.*;
 import static org.jetbrains.kotlin.lexer.KtTokens.*;
 import static org.jetbrains.kotlin.parsing.KotlinParsing.AnnotationParsingMode.*;
-import static org.jetbrains.kotlin.parsing.KotlinWhitespaceAndCommentsBindersKt.PRECEDING_ALL_BINDER;
-import static org.jetbrains.kotlin.parsing.KotlinWhitespaceAndCommentsBindersKt.TRAILING_ALL_BINDER;
+import static org.jetbrains.kotlin.parsing.trash.KotlinWhitespaceAndCommentsBindersKt.PRECEDING_ALL_BINDER;
+import static org.jetbrains.kotlin.parsing.trash.KotlinWhitespaceAndCommentsBindersKt.TRAILING_ALL_BINDER;
 
 public class KotlinParsing extends AbstractKotlinParsing {
     private static final TokenSet TOP_LEVEL_DECLARATION_FIRST = TokenSet.create(
@@ -56,7 +57,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
             FILE_KEYWORD, FIELD_KEYWORD, GET_KEYWORD, SET_KEYWORD, PROPERTY_KEYWORD,
             RECEIVER_KEYWORD, PARAM_KEYWORD, SETPARAM_KEYWORD, DELEGATE_KEYWORD);
 
-    static KotlinParsing createForTopLevel(SemanticWhitespaceAwarePsiBuilder builder) {
+    public static KotlinParsing createForTopLevel(SemanticWhitespaceAwarePsiBuilder builder) {
         KotlinParsing kotlinParsing = new KotlinParsing(builder);
         kotlinParsing.myExpressionParsing = new KotlinExpressionParsing(builder, kotlinParsing);
         return kotlinParsing;
@@ -93,7 +94,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
      *   : preamble toplevelObject* [eof]
      *   ;
      */
-    void parseFile() {
+    public void parseFile() {
         PsiBuilder.Marker fileMarker = mark();
 
         parsePreamble();

@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package org.jetbrains.kotlin.parsing;
+package org.jetbrains.kotlin.parsing.trash;
 
 import com.intellij.psi.tree.IElementType;
+import org.snrostov.kl.SemanticWhitespaceAwarePsiBuilderAdapter;
 
 public class TruncatedSemanticWhitespaceAwarePsiBuilder extends SemanticWhitespaceAwarePsiBuilderAdapter {
 

@@ -147,40 +147,12 @@ public interface PsiBuilder {
         void collapse(@NotNull IElementType type);
 
         /**
-         * Like {@linkplain #done(IElementType)}, but the marker is completed (end marker inserted)
-         * before specified one. All markers added between start of this marker and the marker specified as end one
-         * must be either dropped or completed.
-         *
-         * @param type   the type of the node in the AST tree.
-         * @param before marker to complete this one before.
-         */
-        void doneBefore(@NotNull IElementType type, @NotNull Marker before);
-
-        /**
-         * Like {@linkplain #doneBefore(IElementType, Marker)}, but in addition an error element with given text
-         * is inserted right before this marker's end.
-         *
-         * @param type         the type of the node in the AST tree.
-         * @param before       marker to complete this one before.
-         * @param errorMessage for error element.
-         */
-        void doneBefore(@NotNull IElementType type, @NotNull Marker before, String errorMessage);
-
-        /**
          * Completes this marker and labels it as error element with specified message. Before calling this method,
          * all markers added after the beginning of this marker must be either dropped or completed.
          *
          * @param message for error element.
          */
         void error(String message);
-
-        /**
-         * Like {@linkplain #error(String)}, but the marker is completed before specified one.
-         *
-         * @param message for error element.
-         * @param before  marker to complete this one before.
-         */
-        void errorBefore(String message, @NotNull Marker before);
 
         /**
          * Allows to define custom edge token binders instead of default ones. If any of parameters is null

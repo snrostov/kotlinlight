@@ -1,4 +1,4 @@
-package org.jetbrains.kotlin.parsing;
+package org.jetbrains.kotlin.parsing.trash;
 
 import org.jetbrains.annotations.NotNull;
 

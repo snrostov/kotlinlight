@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.jetbrains.kotlin.parsing;
+package org.jetbrains.kotlin.parsing.trash;
 
 import com.intellij.lang.PsiBuilder;
 import com.intellij.psi.tree.IElementType;

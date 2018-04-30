@@ -14,35 +14,31 @@
  * limitations under the License.
  */
 
-package org.jetbrains.kotlin.parsing;
+package org.jetbrains.kotlin.parsing.trash;
 
-public class SemanticWhitespaceAwarePsiBuilderForByClause extends SemanticWhitespaceAwarePsiBuilderAdapter {
+import com.intellij.psi.tree.IElementType;
 
-    private int stackSize = 0;
+public abstract class AbstractTokenStreamPattern implements TokenStreamPattern {
 
-    public SemanticWhitespaceAwarePsiBuilderForByClause(SemanticWhitespaceAwarePsiBuilder builder) {
-        super(builder);
+    protected int lastOccurrence = -1;
+
+    protected void fail() {
+        lastOccurrence = -1;
     }
 
     @Override
-    public void disableNewlines() {
-        super.disableNewlines();
-        stackSize++;
+    public int result() {
+        return lastOccurrence;
     }
 
     @Override
-    public void enableNewlines() {
-        super.enableNewlines();
-        stackSize++;
+    public boolean isTopLevel(int openAngleBrackets, int openBrackets, int openBraces, int openParentheses) {
+        return openBraces == 0 && openBrackets == 0 && openParentheses == 0 && openAngleBrackets == 0;
     }
 
     @Override
-    public void restoreNewlinesState() {
-        super.restoreNewlinesState();
-        stackSize--;
-    }
-
-    public int getStackSize() {
-        return stackSize;
+    public boolean handleUnmatchedClosing(IElementType token) {
+        return false;
     }
 }
+

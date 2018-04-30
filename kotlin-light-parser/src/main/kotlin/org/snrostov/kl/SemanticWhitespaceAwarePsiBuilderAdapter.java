@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package org.jetbrains.kotlin.parsing;
+package org.snrostov.kl;
 
-import com.intellij.lang.PsiBuilder;
 import com.intellij.psi.tree.IElementType;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.kotlin.parsing.trash.SemanticWhitespaceAwarePsiBuilder;
 
 public class SemanticWhitespaceAwarePsiBuilderAdapter implements SemanticWhitespaceAwarePsiBuilder {
     @Override
