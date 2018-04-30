@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright 2010-2017 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,11 +32,11 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
 
   private var myExpressionParsing: KotlinExpressionParsing? = null
 
-  /*
-     * [start] kotlinFile
-     *   : preamble toplevelObject* [eof]
-     *   ;
-     */
+  /**
+   * [start] kotlinFile
+   *   : preamble toplevelObject* [eof]
+   *   ;
+   */
   fun parseFile() {
     val fileMarker = mark()
 
@@ -104,7 +104,12 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
   }
 
   fun parseLambdaExpression() {
-    myExpressionParsing!!.parseFunctionLiteral(/* preferBlock = */false, /* collapse = */false)
+    myExpressionParsing!!.parseFunctionLiteral(
+      /** preferBlock = */
+      false,
+      /** collapse = */
+      false
+    )
   }
 
   fun parseScript() {
@@ -116,7 +121,10 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
 
     val blockMarker = mark()
 
-    myExpressionParsing!!.parseStatements(/*isScriptTopLevel = */true)
+    myExpressionParsing!!.parseStatements(
+      /**isScriptTopLevel = */
+      true
+    )
 
     checkForUnexpectedSymbols()
 
@@ -135,25 +143,25 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     }
   }
 
-  /*
-     *preamble
-     *  : fileAnnotationList? packageDirective? import*
-     *  ;
-     */
+  /**
+   *preamble
+   *  : fileAnnotationList? packageDirective? import*
+   *  ;
+   */
   private fun parsePreamble() {
     val firstEntry = mark()
 
-    /*
-         * fileAnnotationList
-         *   : fileAnnotations*
-         */
+    /**
+     * fileAnnotationList
+     *   : fileAnnotations*
+     */
     parseFileAnnotationList(FILE_ANNOTATIONS_BEFORE_PACKAGE)
 
-    /*
-         * packageDirective
-         *   : modifiers "package" SimpleName{"."} SEMI?
-         *   ;
-         */
+    /**
+     * packageDirective
+     *   : modifiers "package" SimpleName{"."} SEMI?
+     *   ;
+     */
     var packageDirective = mark()
     parseModifierList(DEFAULT, TokenSet.EMPTY)
 
@@ -182,7 +190,7 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     parseImportDirectives()
   }
 
-  /* SimpleName{"."} */
+  /** SimpleName{"."} */
   private fun parsePackageName() {
     var qualifiedExpression = mark()
     var simpleName = true
@@ -233,11 +241,11 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     qualifiedExpression.drop()
   }
 
-  /*
-     * import
-     *   : "import" SimpleName{"."} ("." "*" | "as" SimpleName)? SEMI?
-     *   ;
-     */
+  /**
+   * import
+   *   : "import" SimpleName{"."} ("." "*" | "as" SimpleName)? SEMI?
+   *   ;
+   */
   private fun parseImportDirective() {
     assert(_at(IMPORT_KEYWORD))
     val importDirective = mark()
@@ -338,17 +346,17 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     importList.done(IMPORT_LIST)
   }
 
-  /*
-     * toplevelObject
-     *   : package
-     *   : class
-     *   : extension
-     *   : function
-     *   : property
-     *   : typeAlias
-     *   : object
-     *   ;
-     */
+  /**
+   * toplevelObject
+   *   : package
+   *   : class
+   *   : extension
+   *   : function
+   *   : property
+   *   : typeAlias
+   *   : object
+   *   ;
+   */
   private fun parseTopLevelDeclaration() {
     if (at(SEMICOLON)) {
       advance() // SEMICOLON
@@ -387,9 +395,9 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     }
   }
 
-  /*
-     * (modifier | annotation)*
-     */
+  /**
+   * (modifier | annotation)*
+   */
   fun parseModifierList(
     annotationParsingMode: AnnotationParsingMode,
     noModifiersBefore: TokenSet
@@ -397,7 +405,7 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     return parseModifierList(null, annotationParsingMode, noModifiersBefore)
   }
 
-  /**
+  /***
    * (modifier | annotation)*
    *
    *
@@ -479,11 +487,11 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     return false
   }
 
-  /*
-     * fileAnnotationList
-     *   : ("[" "file:" annotationEntry+ "]")*
-     *   ;
-     */
+  /**
+   * fileAnnotationList
+   *   : ("[" "file:" annotationEntry+ "]")*
+   *   ;
+   */
   private fun parseFileAnnotationList(mode: AnnotationParsingMode) {
     if (!mode.isFileAnnotationParsingMode) {
       error("expected file annotation parsing mode, but:$mode")
@@ -498,11 +506,11 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     }
   }
 
-  /*
-     * annotations
-     *   : (annotation | annotationList)*
-     *   ;
-     */
+  /**
+   * annotations
+   *   : (annotation | annotationList)*
+   *   ;
+   */
   fun parseAnnotations(mode: AnnotationParsingMode): Boolean {
     if (!parseAnnotationOrList(mode)) return false
 
@@ -513,25 +521,25 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     return true
   }
 
-  /*
-     * annotation
-     *   : "@" (annotationUseSiteTarget ":")? unescapedAnnotation
-     *   ;
-     *
-     * annotationList
-     *   : "@" (annotationUseSiteTarget ":")? "[" unescapedAnnotation+ "]"
-     *   ;
-     *
-     * annotationUseSiteTarget
-     *   : "file"
-     *   : "field"
-     *   : "property"
-     *   : "get"
-     *   : "set"
-     *   : "param"
-     *   : "setparam"
-     *   ;
-     */
+  /**
+   * annotation
+   *   : "@" (annotationUseSiteTarget ":")? unescapedAnnotation
+   *   ;
+   *
+   * annotationList
+   *   : "@" (annotationUseSiteTarget ":")? "[" unescapedAnnotation+ "]"
+   *   ;
+   *
+   * annotationUseSiteTarget
+   *   : "file"
+   *   : "field"
+   *   : "property"
+   *   : "get"
+   *   : "set"
+   *   : "param"
+   *   : "setparam"
+   *   ;
+   */
   private fun parseAnnotationOrList(mode: AnnotationParsingMode): Boolean {
     if (at(AT)) {
       val nextRawToken = myBuilder.rawLookup(1)
@@ -663,15 +671,15 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     return null
   }
 
-  /*
-     * annotation
-     *   : "@" (annotationUseSiteTarget ":")? unescapedAnnotation
-     *   ;
-     *
-     * unescapedAnnotation
-     *   : SimpleName{"."} typeArguments? valueArguments?
-     *   ;
-     */
+  /**
+   * annotation
+   *   : "@" (annotationUseSiteTarget ":")? unescapedAnnotation
+   *   ;
+   *
+   * unescapedAnnotation
+   *   : SimpleName{"."} typeArguments? valueArguments?
+   *   ;
+   */
   private fun parseAnnotation(mode: AnnotationParsingMode): Boolean {
     assert(_at(IDENTIFIER) || _at(AT) && !WHITE_SPACE_OR_COMMENT_BIT_SET.contains(myBuilder.rawLookup(1)))
 
@@ -715,24 +723,24 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     LOCAL
   }
 
-  /*
-     * class
-     *   : modifiers ("class" | "interface") SimpleName
-     *       typeParameters?
-     *       primaryConstructor?
-     *       (":" annotations delegationSpecifier{","})?
-     *       typeConstraints
-     *       (classBody? | enumClassBody)
-     *   ;
-     *
-     * primaryConstructor
-     *   : (modifiers "constructor")? ("(" functionParameter{","} ")")
-     *   ;
-     *
-     * object
-     *   : "object" SimpleName? primaryConstructor? ":" delegationSpecifier{","}? classBody?
-     *   ;
-     */
+  /**
+   * class
+   *   : modifiers ("class" | "interface") SimpleName
+   *       typeParameters?
+   *       primaryConstructor?
+   *       (":" annotations delegationSpecifier{","})?
+   *       typeConstraints
+   *       (classBody? | enumClassBody)
+   *   ;
+   *
+   * primaryConstructor
+   *   : (modifiers "constructor")? ("(" functionParameter{","} ")")
+   *   ;
+   *
+   * object
+   *   : "object" SimpleName? primaryConstructor? ":" delegationSpecifier{","}? classBody?
+   *   ;
+   */
   private fun parseClassOrObject(
     `object`: Boolean,
     nameParsingMode: NameParsingMode,
@@ -781,7 +789,11 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     }
 
     if (at(LPAR)) {
-      parseValueParameterList(false, /* typeRequired  = */ true, TokenSet.create(LBRACE, RBRACE))
+      parseValueParameterList(
+        false,
+        /** typeRequired  = */
+        true, TokenSet.create(LBRACE, RBRACE)
+      )
       primaryConstructorMarker.done(PRIMARY_CONSTRUCTOR)
     } else if (hasConstructorModifiers || hasConstructorKeyword) {
       // A comprehensive error message for cases like:
@@ -830,11 +842,11 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     parseClassOrObject(true, nameParsingMode, optionalBody, false)
   }
 
-  /*
-     * enumClassBody
-     *   : "{" enumEntries (";" members)? "}"
-     *   ;
-     */
+  /**
+   * enumClassBody
+   *   : "{" enumEntries (";" members)? "}"
+   *   ;
+   */
   private fun parseEnumClassBody() {
     if (!at(LBRACE)) return
 
@@ -853,7 +865,7 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     body.done(CLASS_BODY)
   }
 
-  /**
+  /***
    * enumEntries
    * : enumEntry{","}?
    * ;
@@ -887,11 +899,11 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     SEMICOLON_DELIMITER
   }
 
-  /*
-     * enumEntry
-     *   : modifiers SimpleName ("(" arguments ")")? classBody?
-     *   ;
-     */
+  /**
+   * enumEntry
+   *   : modifiers SimpleName ("(" arguments ")")? classBody?
+   *   ;
+   */
   private fun parseEnumEntry(): ParseEnumEntryResult {
     val entry = mark()
 
@@ -944,11 +956,11 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     }
   }
 
-  /*
-     * classBody
-     *   : ("{" members "}")?
-     *   ;
-     */
+  /**
+   * classBody
+   *   : ("{" members "}")?
+   *   ;
+   */
   private fun parseClassBody() {
     val body = mark()
 
@@ -964,7 +976,7 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     body.done(CLASS_BODY)
   }
 
-  /**
+  /***
    * members
    * : memberDeclaration*
    * ;
@@ -975,23 +987,23 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     }
   }
 
-  /*
-     * memberDeclaration
-     *   : modifiers memberDeclaration'
-     *   ;
-     *
-     * memberDeclaration'
-     *   : companionObject
-     *   : secondaryConstructor
-     *   : function
-     *   : property
-     *   : class
-     *   : extension
-     *   : typeAlias
-     *   : anonymousInitializer
-     *   : object
-     *   ;
-     */
+  /**
+   * memberDeclaration
+   *   : modifiers memberDeclaration'
+   *   ;
+   *
+   * memberDeclaration'
+   *   : companionObject
+   *   : secondaryConstructor
+   *   : function
+   *   : property
+   *   : class
+   *   : extension
+   *   : typeAlias
+   *   : anonymousInitializer
+   *   : object
+   *   ;
+   */
   private fun parseMemberDeclaration() {
     if (at(SEMICOLON)) {
       advance() // SEMICOLON
@@ -1046,13 +1058,13 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     return declType
   }
 
-  /*
-     * secondaryConstructor
-     *   : modifiers "constructor" valueParameters (":" constructorDelegationCall)? block
-     * constructorDelegationCall
-     *   : "this" valueArguments
-     *   : "super" valueArguments
-     */
+  /**
+   * secondaryConstructor
+   *   : modifiers "constructor" valueParameters (":" constructorDelegationCall)? block
+   * constructorDelegationCall
+   *   : "this" valueArguments
+   *   : "super" valueArguments
+   */
   private fun parseSecondaryConstructor() {
     assert(_at(CONSTRUCTOR_KEYWORD))
 
@@ -1060,7 +1072,11 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
 
     val valueArgsRecoverySet = TokenSet.create(LBRACE, SEMICOLON, RPAR, EOL_OR_SEMICOLON, RBRACE)
     if (at(LPAR)) {
-      parseValueParameterList(false, /*typeRequired = */ true, valueArgsRecoverySet)
+      parseValueParameterList(
+        false,
+        /**typeRequired = */
+        true, valueArgsRecoverySet
+      )
     } else {
       errorWithRecovery("Expecting '('", TokenSet.orSet(valueArgsRecoverySet, TokenSet.create(COLON)))
     }
@@ -1113,11 +1129,11 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     mark.done(CONSTRUCTOR_DELEGATION_REFERENCE)
   }
 
-  /*
-     * typeAlias
-     *   : modifiers "typealias" SimpleName typeParameters? "=" type
-     *   ;
-     */
+  /**
+   * typeAlias
+   *   : modifiers "typealias" SimpleName typeParameters? "=" type
+   *   ;
+   */
   fun parseTypeAlias(): IElementType {
     assert(_at(TYPE_ALIAS_KEYWORD))
 
@@ -1146,21 +1162,21 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     return TYPEALIAS
   }
 
-  /*
-     * variableDeclarationEntry
-     *   : SimpleName (":" type)?
-     *   ;
-     *
-     * property
-     *   : modifiers ("val" | "var")
-     *       typeParameters?
-     *       (type ".")?
-     *       ("(" variableDeclarationEntry{","} ")" | variableDeclarationEntry)
-     *       typeConstraints
-     *       ("by" | "=" expression SEMI?)?
-     *       (getter? setter? | setter? getter?) SEMI?
-     *   ;
-     */
+  /**
+   * variableDeclarationEntry
+   *   : SimpleName (":" type)?
+   *   ;
+   *
+   * property
+   *   : modifiers ("val" | "var")
+   *       typeParameters?
+   *       (type ".")?
+   *       ("(" variableDeclarationEntry{","} ")" | variableDeclarationEntry)
+   *       typeConstraints
+   *       ("by" | "=" expression SEMI?)?
+   *       (getter? setter? | setter? getter?) SEMI?
+   *   ;
+   */
   private fun parseProperty(): IElementType {
     return parseProperty(PropertyParsingMode.MEMBER_OR_TOPLEVEL)
   }
@@ -1212,7 +1228,11 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
         "Destructuring declarations are only allowed for local variables/values"
       )
     } else {
-      parseFunctionOrPropertyName(receiverTypeDeclared, "property", propertyNameFollow, /*nameRequired = */ true)
+      parseFunctionOrPropertyName(
+        receiverTypeDeclared, "property", propertyNameFollow,
+        /**nameRequired = */
+        true
+      )
     }
 
     myBuilder.restoreJoiningComplexTokensState()
@@ -1285,11 +1305,11 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     return false
   }
 
-  /*
-     * propertyDelegate
-     *   : "by" expression
-     *   ;
-     */
+  /**
+   * propertyDelegate
+   *   : "by" expression
+   *   ;
+   */
   private fun parsePropertyDelegate() {
     assert(_at(BY_KEYWORD))
     val delegate = mark()
@@ -1298,9 +1318,9 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     delegate.done(PROPERTY_DELEGATE)
   }
 
-  /*
-     * (SimpleName (":" type){","})
-     */
+  /**
+   * (SimpleName (":" type){","})
+   */
   fun parseMultiDeclarationName(follow: TokenSet) {
     // Parsing multi-name, e.g.
     //   val (a, b) = foo()
@@ -1341,16 +1361,16 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     GET, SET
   }
 
-  /*
-     * getterOrSetter
-     *   : modifiers ("get" | "set")
-     *   :
-     *        (     "get" "(" ")"
-     *           |
-     *              "set" "(" modifiers parameter ")"
-     *        ) functionBody
-     *   ;
-     */
+  /**
+   * getterOrSetter
+   *   : modifiers ("get" | "set")
+   *   :
+   *        (     "get" "(" ")"
+   *           |
+   *              "set" "(" modifiers parameter ")"
+   *        ) functionBody
+   *   ;
+   */
   private fun parsePropertyGetterOrSetter(notAllowedKind: AccessorKind?): AccessorKind? {
     val getterOrSetter = mark()
 
@@ -1428,16 +1448,16 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     return parseFunction(false)
   }
 
-  /*
-     * function
-     *   : modifiers "fun" typeParameters?
-     *       (type ".")?
-     *       SimpleName
-     *       typeParameters? functionParameters (":" type)?
-     *       typeConstraints
-     *       functionBody?
-     *   ;
-     */
+  /**
+   * function
+   *   : modifiers "fun" typeParameters?
+   *       (type ".")?
+   *       SimpleName
+   *       typeParameters? functionParameters (":" type)?
+   *       typeConstraints
+   *       functionBody?
+   *   ;
+   */
   @Contract("false -> !null")
   fun parseFunction(failIfIdentifierExists: Boolean): IElementType? {
     assert(_at(FUN_KEYWORD))
@@ -1467,7 +1487,11 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     }
 
     // function as expression has no name
-    parseFunctionOrPropertyName(receiverFound, "function", functionNameFollow, /*nameRequired = */ false)
+    parseFunctionOrPropertyName(
+      receiverFound, "function", functionNameFollow,
+      /**nameRequired = */
+      false
+    )
 
     myBuilder.restoreJoiningComplexTokensState()
 
@@ -1489,7 +1513,11 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     }
 
     if (at(LPAR)) {
-      parseValueParameterList(false, /* typeRequired  = */ false, valueParametersFollow)
+      parseValueParameterList(
+        false,
+        /** typeRequired  = */
+        false, valueParametersFollow
+      )
     } else {
       error("Expecting '('")
     }
@@ -1511,9 +1539,9 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     return FUN
   }
 
-  /*
-     *   (type "." | annotations)?
-     */
+  /**
+   *   (type "." | annotations)?
+   */
   private fun parseReceiverType(title: String, nameFollow: TokenSet): Boolean {
     val annotations = mark()
     val annotationsPresent = parseAnnotations(DEFAULT)
@@ -1576,9 +1604,9 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     return atSet(EQ, COLON, LBRACE, RBRACE, BY_KEYWORD) || atSet(TOP_LEVEL_DECLARATION_FIRST)
   }
 
-  /*
-     * IDENTIFIER
-     */
+  /**
+   * IDENTIFIER
+   */
   private fun parseFunctionOrPropertyName(
     receiverFound: Boolean,
     title: String,
@@ -1595,12 +1623,12 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     }
   }
 
-  /*
-     * functionBody
-     *   : block
-     *   : "=" element
-     *   ;
-     */
+  /**
+   * functionBody
+   *   : block
+   *   : "=" element
+   *   ;
+   */
   private fun parseFunctionBody() {
     if (at(LBRACE)) {
       parseBlock()
@@ -1613,11 +1641,11 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     }
   }
 
-  /*
-     * block
-     *   : "{" (expressions)* "}"
-     *   ;
-     */
+  /***
+   * block
+   *   : "{" (expressions)* "}"
+   *   ;
+   */
   fun parseBlock() {
     val block = mark()
 
@@ -1632,9 +1660,9 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     block.done(BLOCK)
   }
 
-  /*
-     * delegationSpecifier{","}
-     */
+  /**
+   * delegationSpecifier{","}
+   */
   private fun parseDelegationSpecifierList() {
     val list = mark()
 
@@ -1651,17 +1679,17 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     list.done(SUPER_TYPE_LIST)
   }
 
-  /*
-     * delegationSpecifier
-     *   : constructorInvocation // type and constructor arguments
-     *   : userType
-     *   : explicitDelegation
-     *   ;
-     *
-     * explicitDelegation
-     *   : userType "by" element
-     *   ;
-     */
+  /**
+   * delegationSpecifier
+   *   : constructorInvocation // type and constructor arguments
+   *   : userType
+   *   : explicitDelegation
+   *   ;
+   *
+   * explicitDelegation
+   *   : userType "by" element
+   *   ;
+   */
   private fun parseDelegationSpecifier() {
     val delegator = mark()
     val reference = mark()
@@ -1686,11 +1714,11 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     }
   }
 
-  /*
-     * typeParameters
-     *   : ("<" typeParameter{","} ">"
-     *   ;
-     */
+  /**
+   * typeParameters
+   *   : ("<" typeParameter{","} ">"
+   *   ;
+   */
   private fun parseTypeParameterList(recoverySet: TokenSet): Boolean {
     var result = false
     if (at(LT)) {
@@ -1716,11 +1744,11 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     return result
   }
 
-  /*
-     * typeConstraints
-     *   : ("where" typeConstraint{","})?
-     *   ;
-     */
+  /**
+   * typeConstraints
+   *   : ("where" typeConstraint{","})?
+   *   ;
+   */
   private fun parseTypeConstraintsGuarded(typeParameterListOccurred: Boolean) {
     val error = mark()
     val constraints = parseTypeConstraints()
@@ -1739,9 +1767,9 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     return false
   }
 
-  /*
-     * typeConstraint{","}
-     */
+  /**
+   * typeConstraint{","}
+   */
   private fun parseTypeConstraintList() {
     assert(_at(WHERE_KEYWORD))
 
@@ -1759,11 +1787,11 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     list.done(TYPE_CONSTRAINT_LIST)
   }
 
-  /*
-     * typeConstraint
-     *   : annotations SimpleName ":" type
-     *   ;
-     */
+  /**
+   * typeConstraint
+   *   : annotations SimpleName ":" type
+   *   ;
+   */
   private fun parseTypeConstraint() {
     val constraint = mark()
 
@@ -1792,11 +1820,11 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     constraint.done(TYPE_CONSTRAINT)
   }
 
-  /*
-     * typeParameter
-     *   : modifiers SimpleName (":" userType)?
-     *   ;
-     */
+  /**
+   * typeParameter
+   *   : modifiers SimpleName (":" userType)?
+   *   ;
+   */
   private fun parseTypeParameter() {
     if (atSet(TYPE_PARAMETER_GT_RECOVERY_SET)) {
       error("Type parameter declaration expected")
@@ -1927,16 +1955,16 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     return typeElementMarker
   }
 
-  /*
-     * userType
-     *   : simpleUserType{"."}
-     *   ;
-     *
-     *   recovers on platform types:
-     *    - Foo!
-     *    - (Mutable)List<Foo>!
-     *    - Array<(out) Foo>!
-     */
+  /**
+   * userType
+   *   : simpleUserType{"."}
+   *   ;
+   *
+   *   recovers on platform types:
+   *    - Foo!
+   *    - (Mutable)List<Foo>!
+   *    - Array<(out) Foo>!
+   */
   private fun parseUserType() {
     var userType = mark()
 
@@ -2034,9 +2062,9 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     }
   }
 
-  /*
-     *  (optionalProjection type){","}
-     */
+  /**
+   *  (optionalProjection type){","}
+   */
   private fun parseTypeArgumentList(): PsiBuilder.Marker? {
     if (!at(LT)) return null
 
@@ -2081,11 +2109,11 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     return atGT
   }
 
-  /*
-     * functionType
-     *   : (type ".")? "(" parameter{","}? ")" "->" type?
-     *   ;
-     */
+  /**
+   * functionType
+   *   : (type ".")? "(" parameter{","}? ")" "->" type?
+   *   ;
+   */
   private fun parseFunctionType() {
     parseFunctionTypeContents().done(FUNCTION_TYPE)
   }
@@ -2094,7 +2122,11 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     assert(_at(LPAR)) { tt() ?: "null" }
     val functionType = mark()
 
-    parseValueParameterList(true, /* typeRequired  = */ true, TokenSet.EMPTY)
+    parseValueParameterList(
+      true,
+      /** typeRequired  = */
+      true, TokenSet.EMPTY
+    )
 
     expect(ARROW, "Expecting '->' to specify return type of a function type", TYPE_REF_FIRST)
     parseTypeRef()
@@ -2102,19 +2134,19 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     return functionType
   }
 
-  /*
-     * functionParameters
-     *   : "(" functionParameter{","}? ")"
-     *   ;
-     *
-     * functionParameter
-     *   : modifiers functionParameterRest
-     *   ;
-     *
-     * functionParameterRest
-     *   : parameter ("=" element)?
-     *   ;
-     */
+  /**
+   * functionParameters
+   *   : "(" functionParameter{","}? ")"
+   *   ;
+   *
+   * functionParameter
+   *   : modifiers functionParameterRest
+   *   ;
+   *
+   * functionParameterRest
+   *   : parameter ("=" element)?
+   *   ;
+   */
   private fun parseValueParameterList(isFunctionTypeContents: Boolean, typeRequired: Boolean, recoverySet: TokenSet) {
     assert(_at(LPAR))
     val parameters = mark()
@@ -2157,11 +2189,11 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     parameters.done(VALUE_PARAMETER_LIST)
   }
 
-  /*
-     * functionParameter
-     *   : modifiers ("val" | "var")? parameter ("=" element)?
-     *   ;
-     */
+  /**
+   * functionParameter
+   *   : modifiers ("val" | "var")? parameter ("=" element)?
+   *   ;
+   */
   private fun tryParseValueParameter(typeRequired: Boolean): Boolean {
     return parseValueParameter(true, typeRequired)
   }
@@ -2188,11 +2220,11 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     return true
   }
 
-  /*
-     * functionParameterRest
-     *   : parameter ("=" element)?
-     *   ;
-     */
+  /**
+   * functionParameterRest
+   *   : parameter ("=" element)?
+   *   ;
+   */
   private fun parseFunctionParameterRest(typeRequired: Boolean): Boolean {
     var noErrors = true
 
@@ -2231,7 +2263,8 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     return createForTopLevel(builder)
   }
 
-  /*package*/  class ModifierDetector : Consumer<IElementType> {
+  /**package*/
+  class ModifierDetector : Consumer<IElementType> {
     var isEnumDetected = false
       private set
     var isDefaultDetected = false
@@ -2310,19 +2343,20 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
 
     private val NO_MODIFIER_BEFORE_FOR_VALUE_PARAMETER = TokenSet.create(COMMA, COLON, EQ, RPAR)
   }
-}/*
-     * type
-     *   : typeModifiers typeReference
-     *   ;
-     *
-     * typeReference
-     *   : functionType
-     *   : userType
-     *   : nullableType
-     *   : "dynamic"
-     *   ;
-     *
-     * nullableType
-     *   : typeReference "?"
-     *   ;
-     */
+}
+/**
+ * type
+ *   : typeModifiers typeReference
+ *   ;
+ *
+ * typeReference
+ *   : functionType
+ *   : userType
+ *   : nullableType
+ *   : "dynamic"
+ *   ;
+ *
+ * nullableType
+ *   : typeReference "?"
+ *   ;
+ */
