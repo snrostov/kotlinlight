@@ -362,21 +362,21 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     val keywordToken = tt()
     var declType: IElementType? = null
 
-    if (keywordToken === CLASS_KEYWORD || keywordToken === INTERFACE_KEYWORD) {
-      declType = parseClass(detector.isEnumDetected)
-    } else if (keywordToken === FUN_KEYWORD) {
-      declType = parseFunction()
-    } else if (keywordToken === VAL_KEYWORD || keywordToken === VAR_KEYWORD) {
-      declType = parseProperty()
-    } else if (keywordToken === TYPE_ALIAS_KEYWORD) {
-      declType = parseTypeAlias()
-    } else if (keywordToken === OBJECT_KEYWORD) {
-      parseObject(NameParsingMode.REQUIRED, true)
-      declType = OBJECT_DECLARATION
-    } else if (at(LBRACE)) {
-      error("Expecting a top level declaration")
-      parseBlock()
-      declType = FUN
+    when (keywordToken) {
+      CLASS_KEYWORD, INTERFACE_KEYWORD ->
+        declType = parseClass(detector.isEnumDetected)
+      FUN_KEYWORD -> declType = parseFunction()
+      VAL_KEYWORD, VAR_KEYWORD -> declType = parseProperty()
+      TYPE_ALIAS_KEYWORD -> declType = parseTypeAlias()
+      OBJECT_KEYWORD -> {
+        parseObject(NameParsingMode.REQUIRED, true)
+        declType = OBJECT_DECLARATION
+      }
+      else -> if (at(LBRACE)) {
+        error("Expecting a top level declaration")
+        parseBlock()
+        declType = FUN
+      }
     }
 
     if (declType == null) {
@@ -536,23 +536,26 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     if (at(AT)) {
       val nextRawToken = myBuilder.rawLookup(1)
       var tokenToMatch = nextRawToken
-      var isTargetedAnnotation = false
+      var isTargetedAnnotation = false// AT
+      // AT, (ANNOTATION TARGET KEYWORD), COLON
 
-      if ((nextRawToken === IDENTIFIER || ANNOTATION_TARGETS.contains(nextRawToken)) && lookahead(2) === COLON) {
-        tokenToMatch = lookahead(3)
-        isTargetedAnnotation = true
-      } else if (lookahead(1) === COLON) {
-        // recovery for "@:ann"
-        isTargetedAnnotation = true
-        tokenToMatch = lookahead(2)
+      // AT, COLON
+      when {
+        (nextRawToken === IDENTIFIER || ANNOTATION_TARGETS.contains(nextRawToken)) && lookahead(2) === COLON -> {
+          tokenToMatch = lookahead(3)
+          isTargetedAnnotation = true
+        }
+        lookahead(1) === COLON -> {
+          // recovery for "@:ann"
+          isTargetedAnnotation = true
+          tokenToMatch = lookahead(2)
+        }
       }
 
-      if (tokenToMatch === IDENTIFIER) {
-        return parseAnnotation(mode)
-      } else if (tokenToMatch === LBRACKET) {
-        return parseAnnotationList(mode)
-      } else {
-        if (isTargetedAnnotation) {
+      when {
+        tokenToMatch === IDENTIFIER -> return parseAnnotation(mode)
+        tokenToMatch === LBRACKET -> return parseAnnotationList(mode)
+        else -> if (isTargetedAnnotation) {
           if (lookahead(1) === COLON) {
             errorAndAdvance("Expected annotation identifier after ':'", 2) // AT, COLON
           } else {
@@ -1012,32 +1015,33 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
   private fun parseMemberDeclarationRest(isEnum: Boolean, isDefault: Boolean): IElementType? {
     val keywordToken = tt()
     var declType: IElementType? = null
-    if (keywordToken === CLASS_KEYWORD || keywordToken === INTERFACE_KEYWORD) {
-      declType = parseClass(isEnum)
-    } else if (keywordToken === FUN_KEYWORD) {
-      declType = parseFunction()
-    } else if (keywordToken === VAL_KEYWORD || keywordToken === VAR_KEYWORD) {
-      declType = parseProperty()
-    } else if (keywordToken === TYPE_ALIAS_KEYWORD) {
-      declType = parseTypeAlias()
-    } else if (keywordToken === OBJECT_KEYWORD) {
-      parseObject(if (isDefault) NameParsingMode.ALLOWED else NameParsingMode.REQUIRED, true)
-      declType = OBJECT_DECLARATION
-    } else if (at(INIT_KEYWORD)) {
-      advance() // init
-      if (at(LBRACE)) {
-        parseBlock()
-      } else {
-        mark().error("Expecting '{' after 'init'")
+    when {
+      keywordToken === CLASS_KEYWORD || keywordToken === INTERFACE_KEYWORD -> declType = parseClass(isEnum)
+      keywordToken === FUN_KEYWORD -> declType = parseFunction()
+      keywordToken === VAL_KEYWORD || keywordToken === VAR_KEYWORD -> declType = parseProperty()
+      keywordToken === TYPE_ALIAS_KEYWORD -> declType = parseTypeAlias()
+      keywordToken === OBJECT_KEYWORD -> {
+        parseObject(if (isDefault) NameParsingMode.ALLOWED else NameParsingMode.REQUIRED, true)
+        declType = OBJECT_DECLARATION
       }
-      declType = CLASS_INITIALIZER
-    } else if (at(CONSTRUCTOR_KEYWORD)) {
-      parseSecondaryConstructor()
-      declType = SECONDARY_CONSTRUCTOR
-    } else if (at(LBRACE)) {
-      error("Expecting member declaration")
-      parseBlock()
-      declType = FUN
+      at(INIT_KEYWORD) -> {
+        advance() // init
+        if (at(LBRACE)) {
+          parseBlock()
+        } else {
+          mark().error("Expecting '{' after 'init'")
+        }
+        declType = CLASS_INITIALIZER
+      }
+      at(CONSTRUCTOR_KEYWORD) -> {
+        parseSecondaryConstructor()
+        declType = SECONDARY_CONSTRUCTOR
+      }
+      at(LBRACE) -> {
+        error("Expecting member declaration")
+        parseBlock()
+        declType = FUN
+      }
     }
     return declType
   }
@@ -1663,18 +1667,22 @@ class KotlinParsing private constructor(builder: SemanticWhitespaceAwarePsiBuild
     val reference = mark()
     parseTypeRef()
 
-    if (at(BY_KEYWORD)) {
-      reference.drop()
-      advance() // BY_KEYWORD
-      createForByClause(myBuilder).myExpressionParsing!!.parseExpression()
-      delegator.done(DELEGATED_SUPER_TYPE_ENTRY)
-    } else if (at(LPAR)) {
-      reference.done(CONSTRUCTOR_CALLEE)
-      myExpressionParsing!!.parseValueArgumentList()
-      delegator.done(SUPER_TYPE_CALL_ENTRY)
-    } else {
-      reference.drop()
-      delegator.done(SUPER_TYPE_ENTRY)
+    when {
+      at(BY_KEYWORD) -> {
+        reference.drop()
+        advance() // BY_KEYWORD
+        createForByClause(myBuilder).myExpressionParsing!!.parseExpression()
+        delegator.done(DELEGATED_SUPER_TYPE_ENTRY)
+      }
+      at(LPAR) -> {
+        reference.done(CONSTRUCTOR_CALLEE)
+        myExpressionParsing!!.parseValueArgumentList()
+        delegator.done(SUPER_TYPE_CALL_ENTRY)
+      }
+      else -> {
+        reference.drop()
+        delegator.done(SUPER_TYPE_ENTRY)
+      }
     }
   }
 

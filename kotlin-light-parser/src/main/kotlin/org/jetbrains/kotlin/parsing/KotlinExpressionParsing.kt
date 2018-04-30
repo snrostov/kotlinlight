@@ -517,62 +517,66 @@ open class KotlinExpressionParsing(
      *   ;
      */
   private fun parseStringTemplateElement() {
-    if (at(REGULAR_STRING_PART)) {
-      val mark = mark()
-      advance() // REGULAR_STRING_PART
-      mark.done(LITERAL_STRING_TEMPLATE_ENTRY)
-    } else if (at(ESCAPE_SEQUENCE)) {
-      val mark = mark()
-      advance() // ESCAPE_SEQUENCE
-      mark.done(ESCAPE_STRING_TEMPLATE_ENTRY)
-    } else if (at(SHORT_TEMPLATE_ENTRY_START)) {
-      val entry = mark()
-      advance() // SHORT_TEMPLATE_ENTRY_START
-
-      if (at(THIS_KEYWORD)) {
-        val thisExpression = mark()
-        val reference = mark()
-        advance() // THIS_KEYWORD
-        reference.done(REFERENCE_EXPRESSION)
-        thisExpression.done(THIS_EXPRESSION)
-      } else {
-        val keyword = KEYWORD_TEXTS[myBuilder.tokenText]
-        if (keyword != null) {
-          myBuilder.remapCurrentToken(keyword)
-          errorAndAdvance("Keyword cannot be used as a reference")
-        } else {
-          val reference = mark()
-          expect(IDENTIFIER, "Expecting a name")
-          reference.done(REFERENCE_EXPRESSION)
-        }
+    when {
+      at(REGULAR_STRING_PART) -> {
+        val mark = mark()
+        advance() // REGULAR_STRING_PART
+        mark.done(LITERAL_STRING_TEMPLATE_ENTRY)
       }
+      at(ESCAPE_SEQUENCE) -> {
+        val mark = mark()
+        advance() // ESCAPE_SEQUENCE
+        mark.done(ESCAPE_STRING_TEMPLATE_ENTRY)
+      }
+      at(SHORT_TEMPLATE_ENTRY_START) -> {
+        val entry = mark()
+        advance() // SHORT_TEMPLATE_ENTRY_START
 
-      entry.done(SHORT_STRING_TEMPLATE_ENTRY)
-    } else if (at(LONG_TEMPLATE_ENTRY_START)) {
-      val longTemplateEntry = mark()
-
-      advance() // LONG_TEMPLATE_ENTRY_START
-
-      while (!eof()) {
-        val offset = myBuilder.currentOffset
-
-        parseExpression()
-
-        if (_at(LONG_TEMPLATE_ENTRY_END)) {
-          advance()
-          break
+        if (at(THIS_KEYWORD)) {
+          val thisExpression = mark()
+          val reference = mark()
+          advance() // THIS_KEYWORD
+          reference.done(REFERENCE_EXPRESSION)
+          thisExpression.done(THIS_EXPRESSION)
         } else {
-          error("Expecting '}'")
-          if (offset == myBuilder.currentOffset) {
-            // Prevent hang if can't advance with parseExpression()
-            advance()
+          val keyword = KEYWORD_TEXTS[myBuilder.tokenText]
+          if (keyword != null) {
+            myBuilder.remapCurrentToken(keyword)
+            errorAndAdvance("Keyword cannot be used as a reference")
+          } else {
+            val reference = mark()
+            expect(IDENTIFIER, "Expecting a name")
+            reference.done(REFERENCE_EXPRESSION)
           }
         }
-      }
 
-      longTemplateEntry.done(LONG_STRING_TEMPLATE_ENTRY)
-    } else {
-      errorAndAdvance("Unexpected token in a string template")
+        entry.done(SHORT_STRING_TEMPLATE_ENTRY)
+      }
+      at(LONG_TEMPLATE_ENTRY_START) -> {
+        val longTemplateEntry = mark()
+
+        advance() // LONG_TEMPLATE_ENTRY_START
+
+        while (!eof()) {
+          val offset = myBuilder.currentOffset
+
+          parseExpression()
+
+          if (_at(LONG_TEMPLATE_ENTRY_END)) {
+            advance()
+            break
+          } else {
+            error("Expecting '}'")
+            if (offset == myBuilder.currentOffset) {
+              // Prevent hang if can't advance with parseExpression()
+              advance()
+            }
+          }
+        }
+
+        longTemplateEntry.done(LONG_STRING_TEMPLATE_ENTRY)
+      }
+      else -> errorAndAdvance("Unexpected token in a string template")
     }
   }
 
@@ -588,18 +592,13 @@ open class KotlinExpressionParsing(
      *   ;
      */
   private fun parseLiteralConstant(): Boolean {
-    if (at(TRUE_KEYWORD) || at(FALSE_KEYWORD)) {
-      parseOneTokenExpression(BOOLEAN_CONSTANT)
-    } else if (at(INTEGER_LITERAL)) {
-      parseOneTokenExpression(INTEGER_CONSTANT)
-    } else if (at(CHARACTER_LITERAL)) {
-      parseOneTokenExpression(CHARACTER_CONSTANT)
-    } else if (at(FLOAT_LITERAL)) {
-      parseOneTokenExpression(FLOAT_CONSTANT)
-    } else if (at(NULL_KEYWORD)) {
-      parseOneTokenExpression(NULL)
-    } else {
-      return false
+    when {
+      at(TRUE_KEYWORD) || at(FALSE_KEYWORD) -> parseOneTokenExpression(BOOLEAN_CONSTANT)
+      at(INTEGER_LITERAL) -> parseOneTokenExpression(INTEGER_CONSTANT)
+      at(CHARACTER_LITERAL) -> parseOneTokenExpression(CHARACTER_CONSTANT)
+      at(FLOAT_LITERAL) -> parseOneTokenExpression(FLOAT_CONSTANT)
+      at(NULL_KEYWORD) -> parseOneTokenExpression(NULL)
+      else -> return false
     }
     return true
   }
@@ -719,34 +718,35 @@ open class KotlinExpressionParsing(
   private fun parseWhenCondition() {
     val condition = mark()
     myBuilder.disableNewlines()
-    if (at(IN_KEYWORD) || at(NOT_IN)) {
-      val mark = mark()
-      advance() // IN_KEYWORD or NOT_IN
-      mark.done(OPERATION_REFERENCE)
+    when {
+      at(IN_KEYWORD) || at(NOT_IN) -> {
+        val mark = mark()
+        advance() // IN_KEYWORD or NOT_IN
+        mark.done(OPERATION_REFERENCE)
 
 
-      if (atSet(WHEN_CONDITION_RECOVERY_SET_WITH_ARROW)) {
-        error("Expecting an element")
-      } else {
-        parseExpression()
+        when {
+          atSet(WHEN_CONDITION_RECOVERY_SET_WITH_ARROW) -> error("Expecting an element")
+          else -> parseExpression()
+        }
+        condition.done(WHEN_CONDITION_IN_RANGE)
       }
-      condition.done(WHEN_CONDITION_IN_RANGE)
-    } else if (at(IS_KEYWORD) || at(NOT_IS)) {
-      advance() // IS_KEYWORD or NOT_IS
+      at(IS_KEYWORD) || at(NOT_IS) -> {
+        advance() // IS_KEYWORD or NOT_IS
 
-      if (atSet(WHEN_CONDITION_RECOVERY_SET_WITH_ARROW)) {
-        error("Expecting a type")
-      } else {
-        myKotlinParsing.parseTypeRef()
+        when {
+          atSet(WHEN_CONDITION_RECOVERY_SET_WITH_ARROW) -> error("Expecting a type")
+          else -> myKotlinParsing.parseTypeRef()
+        }
+        condition.done(WHEN_CONDITION_IS_PATTERN)
       }
-      condition.done(WHEN_CONDITION_IS_PATTERN)
-    } else {
-      if (atSet(WHEN_CONDITION_RECOVERY_SET_WITH_ARROW)) {
-        error("Expecting an expression, is-condition or in-condition")
-      } else {
-        parseExpression()
+      else -> {
+        when {
+          atSet(WHEN_CONDITION_RECOVERY_SET_WITH_ARROW) -> error("Expecting an expression, is-condition or in-condition")
+          else -> parseExpression()
+        }
+        condition.done(WHEN_CONDITION_EXPRESSION)
       }
-      condition.done(WHEN_CONDITION_EXPRESSION)
     }
     myBuilder.restoreNewlinesState()
   }
@@ -982,14 +982,14 @@ open class KotlinExpressionParsing(
     while (!eof()) {
       val parameter = mark()
 
-      if (at(COLON)) {
-        error("Expecting parameter name")
-      } else if (at(LPAR)) {
-        val destructuringDeclaration = mark()
-        myKotlinParsing.parseMultiDeclarationName(TOKEN_SET_TO_FOLLOW_AFTER_DESTRUCTURING_DECLARATION_IN_LAMBDA)
-        destructuringDeclaration.done(DESTRUCTURING_DECLARATION)
-      } else {
-        expect(IDENTIFIER, "Expecting parameter name", TokenSet.create(ARROW))
+      when {
+        at(COLON) -> error("Expecting parameter name")
+        at(LPAR) -> {
+          val destructuringDeclaration = mark()
+          myKotlinParsing.parseMultiDeclarationName(TOKEN_SET_TO_FOLLOW_AFTER_DESTRUCTURING_DECLARATION_IN_LAMBDA)
+          destructuringDeclaration.done(DESTRUCTURING_DECLARATION)
+        }
+        else -> expect(IDENTIFIER, "Expecting parameter name", TokenSet.create(ARROW))
       }
 
       if (at(COLON)) {
@@ -1114,29 +1114,27 @@ open class KotlinExpressionParsing(
 
     }
 
-    if (keywordToken === CLASS_KEYWORD || keywordToken === INTERFACE_KEYWORD) {
-      declType = myKotlinParsing.parseClass(isEnum)
-    } else if (keywordToken === FUN_KEYWORD) {
-      declType = myKotlinParsing.parseFunction()
-    } else if (keywordToken === VAL_KEYWORD || keywordToken === VAR_KEYWORD) {
-      declType = myKotlinParsing.parseLocalProperty(isScriptTopLevel)
-    } else if (keywordToken === TYPE_ALIAS_KEYWORD) {
-      declType = myKotlinParsing.parseTypeAlias()
-    } else if (keywordToken === OBJECT_KEYWORD) {
-      // Object expression may appear at the statement position: should parse it
-      // as expression instead of object declaration
-      // sample:
-      // {
-      //   object : Thread() {
-      //   }
-      // }
-      val lookahead = lookahead(1)
-      if (lookahead === COLON || lookahead === LBRACE) {
-        return null
-      }
+    when {
+      keywordToken === CLASS_KEYWORD || keywordToken === INTERFACE_KEYWORD -> declType = myKotlinParsing.parseClass(isEnum)
+      keywordToken === FUN_KEYWORD -> declType = myKotlinParsing.parseFunction()
+      keywordToken === VAL_KEYWORD || keywordToken === VAR_KEYWORD -> declType = myKotlinParsing.parseLocalProperty(isScriptTopLevel)
+      keywordToken === TYPE_ALIAS_KEYWORD -> declType = myKotlinParsing.parseTypeAlias()
+      keywordToken === OBJECT_KEYWORD -> {
+        // Object expression may appear at the statement position: should parse it
+        // as expression instead of object declaration
+        // sample:
+        // {
+        //   object : Thread() {
+        //   }
+        // }
+        val lookahead = lookahead(1)
+        if (lookahead === COLON || lookahead === LBRACE) {
+          return null
+        }
 
-      myKotlinParsing.parseObject(NameParsingMode.REQUIRED, true)
-      declType = OBJECT_DECLARATION
+        myKotlinParsing.parseObject(NameParsingMode.REQUIRED, true)
+        declType = OBJECT_DECLARATION
+      }
     }
     return declType
   }
